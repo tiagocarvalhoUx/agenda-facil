@@ -2,12 +2,12 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { applyAccent } from '@/lib/accent'
-import { fetchEstablishment, fetchSlots, createBooking } from '@/lib/publicApi'
+import { fetchEstablishment, fetchSlots, createBooking, joinWaitlist } from '@/lib/publicApi'
 import { mapBookingError } from '@/lib/errors'
 import { useToast } from '@/composables/useToast'
 import { formatPreco, formatDuracao, formatHora, formatDataLonga, toDateParam } from '@/lib/format'
 import { buildICS, downloadICS } from '@/lib/ics'
-import type { PublicEstablishment, AvailableSlot } from '@/types/database.types'
+import type { PublicEstablishment, AvailableSlot, BookingResult } from '@/types/database.types'
 
 import BookingStepper from '@/components/public/BookingStepper.vue'
 import DateNavigator from '@/components/public/DateNavigator.vue'
@@ -48,11 +48,25 @@ const slots = ref<AvailableSlot[]>([])
 const loadingSlots = ref(false)
 const slotsError = ref(false)
 const submitting = ref(false)
-const confirmedId = ref<string | null>(null)
+const confirmed = ref<BookingResult | null>(null)
 
 const selectedService = computed(() => estab.value?.servicos.find((s) => s.id === form.serviceId))
 const selectedProf = computed(() =>
   form.professionalId ? estab.value?.profissionais.find((p) => p.id === form.professionalId) : null,
+)
+
+// Só os profissionais que realizam o serviço escolhido (§6.2). Lista vazia de
+// vínculos no serviço = todos realizam (retrocompatível).
+const professionalsForService = computed(() => {
+  const all = estab.value?.profissionais ?? []
+  const ids = selectedService.value?.profissionais ?? []
+  if (ids.length === 0) return all
+  return all.filter((p) => ids.includes(p.id))
+})
+
+// Link de auto-gerenciamento (remarcar/cancelar sem login).
+const manageUrl = computed(() =>
+  confirmed.value ? `${window.location.origin}/b/${confirmed.value.manage_token}` : '',
 )
 const slotFim = computed(() => {
   const slot = slots.value.find((s) => s.inicio_at === form.slotIso)
@@ -136,7 +150,7 @@ async function submit() {
   if (!validateIdent() || !form.slotIso) return
   submitting.value = true
   try {
-    confirmedId.value = await createBooking({
+    confirmed.value = await createBooking({
       slug,
       serviceId: form.serviceId,
       professionalId: form.professionalId,
@@ -174,6 +188,36 @@ function addToCalendar() {
 
 function back() {
   if (step.value > 0) step.value--
+}
+
+// ----- Lista de espera (§6.5): quando não há horário no dia -----
+const waitlistOpen = ref(false)
+const waitlist = reactive({ nome: '', contato: '' })
+const waitlistSending = ref(false)
+const waitlistDone = ref(false)
+
+async function submitWaitlist() {
+  if (!waitlist.nome.trim() || !waitlist.contato.trim()) {
+    toast.error('Informe nome e contato.')
+    return
+  }
+  waitlistSending.value = true
+  try {
+    await joinWaitlist({
+      slug,
+      serviceId: form.serviceId,
+      professionalId: form.professionalId,
+      nome: waitlist.nome,
+      contato: waitlist.contato,
+      janela: { data: toDateParam(form.date) },
+    })
+    waitlistDone.value = true
+    toast.success('Você entrou na lista de espera!')
+  } catch (e: unknown) {
+    toast.error(mapBookingError((e as { message?: string }).message))
+  } finally {
+    waitlistSending.value = false
+  }
 }
 </script>
 
@@ -260,15 +304,24 @@ function back() {
             </div>
           </button>
           <button
-            v-for="p in estab.profissionais"
+            v-for="p in professionalsForService"
             :key="p.id"
             class="flex min-h-touch items-center gap-3 rounded-lg border border-border bg-surface p-4 text-left transition-colors duration-fast hover:border-accent hover:bg-accent-soft"
             @click="chooseProfessional(p.id)"
           >
-            <span class="flex h-10 w-10 items-center justify-center rounded-pill bg-surface-2 text-body font-semibold text-text" aria-hidden="true">
+            <img
+              v-if="p.avatar_url"
+              :src="p.avatar_url"
+              :alt="p.nome"
+              class="h-10 w-10 rounded-pill object-cover"
+            />
+            <span v-else class="flex h-10 w-10 items-center justify-center rounded-pill bg-surface-2 text-body font-semibold text-text" aria-hidden="true">
               {{ p.nome.charAt(0) }}
             </span>
-            <p class="text-h3 font-semibold text-text">{{ p.nome }}</p>
+            <div>
+              <p class="text-h3 font-semibold text-text">{{ p.nome }}</p>
+              <p v-if="p.bio" class="line-clamp-1 text-small text-text-muted">{{ p.bio }}</p>
+            </div>
           </button>
         </section>
 
@@ -291,14 +344,31 @@ function back() {
             cta-label="Tentar de novo"
             @cta="loadSlots"
           />
-          <EmptyState
-            v-else
-            icon="🗓️"
-            title="Sem horários nesse dia"
-            description="Tente outra data."
-            cta-label="Ver próximo dia"
-            @cta="form.date = new Date(form.date.getTime() + 86400000)"
-          />
+          <template v-else>
+            <EmptyState
+              icon="🗓️"
+              title="Sem horários nesse dia"
+              description="Tente outra data ou entre na lista de espera."
+              cta-label="Ver próximo dia"
+              @cta="form.date = new Date(form.date.getTime() + 86400000)"
+            />
+
+            <!-- Lista de espera (§6.5): avisamos quando liberar horário -->
+            <div v-if="waitlistDone" class="rounded-lg border border-success/40 bg-success/10 p-4 text-center text-small text-text">
+              ✓ Você está na lista de espera. Avisamos assim que abrir um horário.
+            </div>
+            <div v-else class="rounded-lg border border-border bg-surface p-4">
+              <button v-if="!waitlistOpen" class="text-small font-medium text-accent underline" @click="waitlistOpen = true">
+                Entrar na lista de espera
+              </button>
+              <div v-else class="flex flex-col gap-3">
+                <p class="text-small text-text-muted">Deixe seu contato e avisamos quando liberar um horário.</p>
+                <BaseInput v-model="waitlist.nome" label="Nome" required />
+                <BaseInput v-model="waitlist.contato" label="Telefone ou e-mail" required />
+                <BaseButton :loading="waitlistSending" block @click="submitWaitlist">Entrar na lista</BaseButton>
+              </div>
+            </div>
+          </template>
 
           <BaseButton :disabled="!form.slotIso" block @click="step = 3">Continuar</BaseButton>
         </section>
@@ -350,6 +420,17 @@ function back() {
           </dl>
 
           <BaseButton variant="secondary" block @click="addToCalendar">Adicionar ao calendário</BaseButton>
+
+          <!-- Link de auto-gerenciamento (§6.4): remarcar/cancelar sem login -->
+          <a
+            :href="manageUrl"
+            class="flex min-h-touch w-full items-center justify-center rounded-md border border-border text-small font-medium text-text-muted transition-colors duration-fast hover:border-accent hover:text-text"
+          >
+            Remarcar ou cancelar
+          </a>
+          <p class="text-small text-text-muted">
+            Guarde este link — é por ele que você gerencia o agendamento.
+          </p>
         </section>
       </main>
     </template>

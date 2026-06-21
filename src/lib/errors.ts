@@ -13,6 +13,14 @@ const MESSAGES: Record<string, string> = {
   outside_hours: 'Esse horário está fora do expediente.',
   tenant_not_found: 'Estabelecimento não encontrado.',
   forbidden: 'Você não tem permissão para esta ação.',
+  too_soon: 'Esse horário está dentro da antecedência mínima. Escolha um mais distante.',
+  too_far: 'Esse horário está além do período permitido para agendamento.',
+  booking_not_found: 'Não encontramos esse agendamento. Verifique o link.',
+  booking_not_manageable: 'Esse agendamento não pode mais ser alterado.',
+  cancel_window_closed: 'O prazo para cancelar ou remarcar já passou.',
+  missing_new_time: 'Escolha um novo horário para remarcar.',
+  invalid_action: 'Ação inválida.',
+  invalid_input: 'Preencha os dados corretamente.',
 }
 
 export function mapBookingError(message: string | undefined): string {

@@ -4,6 +4,14 @@ import { useAuthStore } from '@/stores/auth'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    // ----- Auto-gerenciamento por token (sem login) -----
+    {
+      path: '/b/:token',
+      name: 'manage-booking',
+      component: () => import('@/views/public/ManageBooking.vue'),
+      meta: { public: true },
+    },
+
     // ----- Público (cliente final): funil linear sem navegação global -----
     {
       path: '/:slug',
@@ -28,7 +36,14 @@ const router = createRouter({
       children: [
         { path: '', redirect: { name: 'agenda' } },
         { path: 'agenda', name: 'agenda', component: () => import('@/views/app/AgendaView.vue') },
+        {
+          path: 'dashboard',
+          name: 'dashboard',
+          component: () => import('@/views/app/DashboardView.vue'),
+          meta: { ownerOnly: true },
+        },
         { path: 'clientes', name: 'clientes', component: () => import('@/views/app/ClientesView.vue') },
+        { path: 'bloqueios', name: 'bloqueios', component: () => import('@/views/app/BloqueiosView.vue') },
         {
           path: 'servicos',
           name: 'servicos',
@@ -45,6 +60,12 @@ const router = createRouter({
           path: 'configuracoes',
           name: 'configuracoes',
           component: () => import('@/views/app/ConfiguracoesView.vue'),
+          meta: { ownerOnly: true },
+        },
+        {
+          path: 'onboarding',
+          name: 'onboarding',
+          component: () => import('@/views/app/OnboardingView.vue'),
           meta: { ownerOnly: true },
         },
       ],
@@ -67,6 +88,10 @@ router.beforeEach(async (to) => {
   }
   if (to.name === 'login' && auth.isAuthenticated) {
     return { name: 'agenda' }
+  }
+  // Primeiro acesso do dono sem setup → wizard de onboarding (§8.4).
+  if (to.meta.requiresAuth && auth.needsOnboarding && to.name !== 'onboarding') {
+    return { name: 'onboarding' }
   }
   return true
 })

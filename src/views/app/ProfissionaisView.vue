@@ -16,7 +16,7 @@ const list = ref<Professional[]>([])
 const loading = ref(true)
 const showForm = ref(false)
 const saving = ref(false)
-const form = reactive({ id: '', nome: '' })
+const form = reactive({ id: '', nome: '', avatar_url: '', bio: '' })
 
 async function load() {
   loading.value = true
@@ -27,11 +27,11 @@ async function load() {
 onMounted(load)
 
 function novo() {
-  Object.assign(form, { id: '', nome: '' })
+  Object.assign(form, { id: '', nome: '', avatar_url: '', bio: '' })
   showForm.value = true
 }
 function editar(p: Professional) {
-  Object.assign(form, { id: p.id, nome: p.nome })
+  Object.assign(form, { id: p.id, nome: p.nome, avatar_url: p.avatar_url ?? '', bio: p.bio ?? '' })
   showForm.value = true
 }
 async function salvar() {
@@ -40,10 +40,14 @@ async function salvar() {
     return
   }
   saving.value = true
-  const payload = { tenant_id: auth.tenant!.id, nome: form.nome.trim() }
+  const fields = {
+    nome: form.nome.trim(),
+    avatar_url: form.avatar_url.trim() || null,
+    bio: form.bio.trim() || null,
+  }
   const { error } = form.id
-    ? await supabase.from('professionals').update({ nome: payload.nome }).eq('id', form.id)
-    : await supabase.from('professionals').insert(payload)
+    ? await supabase.from('professionals').update(fields).eq('id', form.id)
+    : await supabase.from('professionals').insert({ tenant_id: auth.tenant!.id, ...fields })
   saving.value = false
   if (error) toast.error('Não foi possível salvar.')
   else {
@@ -83,8 +87,12 @@ async function toggleAtivo(p: Professional) {
     <ul v-else class="flex flex-col gap-2">
       <li v-for="p in list" :key="p.id" class="flex items-center justify-between rounded-md border border-border bg-surface p-4">
         <div class="flex items-center gap-3">
-          <span class="flex h-9 w-9 items-center justify-center rounded-pill bg-surface-2 font-semibold text-text" aria-hidden="true">{{ p.nome.charAt(0) }}</span>
-          <p class="text-body font-semibold text-text">{{ p.nome }}</p>
+          <img v-if="p.avatar_url" :src="p.avatar_url" :alt="p.nome" class="h-9 w-9 rounded-pill object-cover" />
+          <span v-else class="flex h-9 w-9 items-center justify-center rounded-pill bg-surface-2 font-semibold text-text" aria-hidden="true">{{ p.nome.charAt(0) }}</span>
+          <div>
+            <p class="text-body font-semibold text-text">{{ p.nome }}</p>
+            <p v-if="p.bio" class="line-clamp-1 text-small text-text-muted">{{ p.bio }}</p>
+          </div>
         </div>
         <div class="flex items-center gap-3">
           <button class="text-small text-text-muted underline" @click="toggleAtivo(p)">{{ p.ativo ? 'Ativo' : 'Inativo' }}</button>
@@ -99,6 +107,16 @@ async function toggleAtivo(p: Professional) {
           <h2 class="mb-4 text-h2 font-display text-text">{{ form.id ? 'Editar' : 'Novo' }} profissional</h2>
           <div class="flex flex-col gap-3">
             <BaseInput v-model="form.nome" label="Nome" required />
+            <BaseInput v-model="form.avatar_url" label="URL da foto (opcional)" placeholder="https://..." />
+            <div class="flex flex-col gap-1">
+              <label class="text-small font-medium text-text">Bio (opcional)</label>
+              <textarea
+                v-model="form.bio"
+                rows="3"
+                class="rounded-md border border-border bg-surface px-3 py-2 text-body text-text focus:border-accent focus:outline-none"
+                placeholder="Especialidades, experiência..."
+              />
+            </div>
             <BaseButton :loading="saving" block @click="salvar">Salvar</BaseButton>
             <BaseButton variant="ghost" block @click="showForm = false">Cancelar</BaseButton>
           </div>

@@ -28,7 +28,9 @@ interface NavItem {
 // short = rótulo enxuto p/ a bottom bar mobile (evita aperto com 5 itens).
 const allItems: NavItem[] = [
   { name: 'agenda', label: 'Agenda', short: 'Agenda', icon: '🗓️' },
+  { name: 'dashboard', label: 'Dashboard', short: 'Painel', icon: '📊', ownerOnly: true },
   { name: 'clientes', label: 'Clientes', short: 'Clientes', icon: '👥' },
+  { name: 'bloqueios', label: 'Bloqueios', short: 'Folgas', icon: '🌴' },
   { name: 'servicos', label: 'Serviços', short: 'Serviços', icon: '✂️', ownerOnly: true },
   { name: 'profissionais', label: 'Profissionais', short: 'Equipe', icon: '🧑‍⚕️', ownerOnly: true },
   { name: 'configuracoes', label: 'Configurações', short: 'Ajustes', icon: '⚙️', ownerOnly: true },
@@ -71,13 +73,13 @@ async function logout() {
       <RouterView />
     </main>
 
-    <!-- Bottom bar mobile (rótulos curtos, sem quebra) -->
-    <nav class="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-surface lg:hidden">
+    <!-- Bottom bar mobile (rótulos curtos; rolável quando há muitos itens) -->
+    <nav class="fixed inset-x-0 bottom-0 z-40 flex overflow-x-auto border-t border-border bg-surface lg:hidden">
       <RouterLink
         v-for="item in items"
         :key="item.name"
         :to="{ name: item.name }"
-        class="flex min-h-touch flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-text-muted"
+        class="flex min-h-touch min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-text-muted"
         active-class="text-accent"
       >
         <span class="text-lg leading-none" aria-hidden="true">{{ item.icon }}</span>

@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
-import { formatHora, formatDataLonga } from '@/lib/format'
-import type { AppointmentStatus } from '@/types/database.types'
+import { formatHora, formatDataLonga, toDateParam } from '@/lib/format'
+import type { AppointmentStatus, Service, Professional } from '@/types/database.types'
 import AppointmentCard from '@/components/agenda/AppointmentCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseInput from '@/components/ui/BaseInput.vue'
 
 // Agenda (ADENDO §15.2/§15.3/§16.2). É a home do painel. Abre no dia de hoje.
 // "Trilho de horário vivo" (§13.5) marca o agora e desliza durante o dia.
@@ -111,6 +112,100 @@ async function setStatus(status: AppointmentStatus) {
     await load()
   }
 }
+
+// ---- Quick-create pelo painel (§8.1) ----
+// Recepcionista cria com cliente na frente. O EXCLUDE do banco é a barreira
+// final contra overbooking; aqui só montamos um insert válido.
+const showCreate = ref(false)
+const services = ref<Service[]>([])
+const professionals = ref<Professional[]>([])
+const creating = ref(false)
+const novo = reactive({
+  service_id: '',
+  professional_id: '',
+  data: toDateParam(new Date()),
+  hora: '09:00',
+  cliente_nome: '',
+  cliente_telefone: '',
+})
+
+async function abrirCriar() {
+  if (services.value.length === 0 || professionals.value.length === 0) {
+    const [{ data: svc }, { data: pr }] = await Promise.all([
+      supabase.from('services').select('*').eq('ativo', true).is('deleted_at', null).order('nome'),
+      supabase.from('professionals').select('*').eq('ativo', true).is('deleted_at', null).order('nome'),
+    ])
+    services.value = (svc as Service[]) ?? []
+    professionals.value = (pr as Professional[]) ?? []
+  }
+  novo.service_id = services.value[0]?.id ?? ''
+  novo.professional_id = professionals.value[0]?.id ?? ''
+  novo.data = toDateParam(date.value)
+  novo.hora = '09:00'
+  novo.cliente_nome = ''
+  novo.cliente_telefone = ''
+  showCreate.value = true
+}
+
+async function criar() {
+  const svc = services.value.find((s) => s.id === novo.service_id)
+  if (!svc || !novo.professional_id) {
+    toast.error('Escolha serviço e profissional.')
+    return
+  }
+  if (!novo.cliente_nome.trim() || !/^\+?[0-9]{10,15}$/.test(novo.cliente_telefone)) {
+    toast.error('Informe nome e telefone válidos do cliente.')
+    return
+  }
+  const inicio = new Date(`${novo.data}T${novo.hora}:00`)
+  if (Number.isNaN(inicio.getTime())) {
+    toast.error('Data/hora inválida.')
+    return
+  }
+  const fim = new Date(inicio.getTime() + (svc.duracao_min + (svc.buffer_min ?? 0)) * 60000)
+  creating.value = true
+  // cliente: reaproveita por telefone no tenant ou cria
+  const { data: existing } = await supabase
+    .from('customers')
+    .select('id')
+    .eq('telefone', novo.cliente_telefone)
+    .maybeSingle()
+  let customerId = (existing as { id: string } | null)?.id
+  if (!customerId) {
+    const { data: c, error: ce } = await supabase
+      .from('customers')
+      .insert({ tenant_id: auth.tenant!.id, nome: novo.cliente_nome.trim(), telefone: novo.cliente_telefone })
+      .select('id')
+      .single()
+    if (ce || !c) {
+      creating.value = false
+      toast.error('Não foi possível salvar o cliente.')
+      return
+    }
+    customerId = (c as { id: string }).id
+  }
+  const { error } = await supabase.from('appointments').insert({
+    tenant_id: auth.tenant!.id,
+    professional_id: novo.professional_id,
+    service_id: novo.service_id,
+    customer_id: customerId,
+    inicio_at: inicio.toISOString(),
+    fim_at: fim.toISOString(),
+    status: 'agendado',
+    origem: 'painel',
+  })
+  creating.value = false
+  if (error) {
+    // exclusion_violation (overbooking) vem como erro 23P01
+    toast.error(error.message.includes('23P01') || error.message.toLowerCase().includes('exclud')
+      ? 'Esse horário conflita com outro agendamento.'
+      : 'Não foi possível criar o agendamento.')
+    return
+  }
+  toast.success('Agendamento criado.')
+  showCreate.value = false
+  await load()
+}
 </script>
 
 <template>
@@ -124,6 +219,7 @@ async function setStatus(status: AppointmentStatus) {
         <button class="flex h-touch w-touch items-center justify-center rounded-md border border-border disabled:opacity-40" :disabled="!canGoBack" aria-label="Dia anterior" @click="shift(-1)">‹</button>
         <button v-if="!isToday" class="min-h-touch rounded-md border border-border px-3 text-small" @click="date = new Date()">Hoje</button>
         <button class="flex h-touch w-touch items-center justify-center rounded-md border border-border" aria-label="Próximo dia" @click="shift(1)">›</button>
+        <BaseButton class="ml-2" @click="abrirCriar">Novo</BaseButton>
       </div>
     </header>
 
@@ -148,7 +244,7 @@ async function setStatus(status: AppointmentStatus) {
       title="Nada na agenda hoje"
       description="Aproveite — ou crie um agendamento."
       cta-label="Novo agendamento"
-      @cta="toast.info('Criação pelo painel: em breve nesta tela.')"
+      @cta="abrirCriar"
     />
 
     <!-- lista do dia com trilho do agora (inserido na posição cronológica) -->
@@ -202,6 +298,40 @@ async function setStatus(status: AppointmentStatus) {
               @click="setStatus(a.status)"
             >{{ a.label }}</BaseButton>
             <BaseButton variant="ghost" block @click="selected = null">Fechar</BaseButton>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Quick-create -->
+    <Teleport to="body">
+      <div v-if="showCreate" class="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/30 sm:items-center" @click.self="showCreate = false">
+        <div class="my-4 w-full max-w-sm rounded-t-lg bg-surface p-5 shadow-lg sm:rounded-lg">
+          <h2 class="mb-4 text-h2 font-display text-text">Novo agendamento</h2>
+          <div v-if="services.length === 0 || professionals.length === 0" class="text-small text-text-muted">
+            Cadastre ao menos um serviço e um profissional primeiro.
+          </div>
+          <div v-else class="flex flex-col gap-3">
+            <div class="flex flex-col gap-1">
+              <label class="text-small font-medium text-text">Serviço</label>
+              <select v-model="novo.service_id" class="min-h-touch rounded-md border border-border bg-surface px-3 text-body text-text focus:border-accent focus:outline-none">
+                <option v-for="s in services" :key="s.id" :value="s.id">{{ s.nome }}</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-small font-medium text-text">Profissional</label>
+              <select v-model="novo.professional_id" class="min-h-touch rounded-md border border-border bg-surface px-3 text-body text-text focus:border-accent focus:outline-none">
+                <option v-for="p in professionals" :key="p.id" :value="p.id">{{ p.nome }}</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <BaseInput v-model="novo.data" label="Data" type="date" />
+              <BaseInput v-model="novo.hora" label="Hora" type="time" />
+            </div>
+            <BaseInput v-model="novo.cliente_nome" label="Cliente" required />
+            <BaseInput v-model="novo.cliente_telefone" label="Telefone" inputmode="tel" required />
+            <BaseButton :loading="creating" block @click="criar">Criar agendamento</BaseButton>
+            <BaseButton variant="ghost" block @click="showCreate = false">Cancelar</BaseButton>
           </div>
         </div>
       </div>

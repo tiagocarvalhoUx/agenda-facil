@@ -12,6 +12,8 @@ export const useAuthStore = defineStore('auth', () => {
   const tenant = ref<Tenant | null>(null)
   const role = ref<MembershipRole | null>(null)
   const loading = ref(true)
+  // true quando o tenant ainda não tem serviços/profissionais (setup wizard §8.4)
+  const needsOnboarding = ref(false)
 
   const isAuthenticated = computed(() => !!session.value)
   const isOwner = computed(() => role.value === 'owner')
@@ -20,6 +22,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (!session.value) {
       tenant.value = null
       role.value = null
+      needsOnboarding.value = false
       return
     }
     // memberships + tenant via RLS (só retorna o que pertence ao usuário).
@@ -33,6 +36,21 @@ export const useAuthStore = defineStore('auth', () => {
       role.value = data.role as MembershipRole
       tenant.value = (data as unknown as { tenant: Tenant }).tenant ?? null
     }
+    await refreshSetupState()
+  }
+
+  // Ativação do tenant: precisa de onboarding se for owner e ainda não houver
+  // profissional ou serviço cadastrado. Contagem barata (head + count).
+  async function refreshSetupState() {
+    if (!tenant.value || role.value !== 'owner') {
+      needsOnboarding.value = false
+      return
+    }
+    const [{ count: profs }, { count: svcs }] = await Promise.all([
+      supabase.from('professionals').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+      supabase.from('services').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+    ])
+    needsOnboarding.value = (profs ?? 0) === 0 || (svcs ?? 0) === 0
   }
 
   async function init() {
@@ -66,10 +84,12 @@ export const useAuthStore = defineStore('auth', () => {
     tenant,
     role,
     loading,
+    needsOnboarding,
     isAuthenticated,
     isOwner,
     init,
     loadContext,
+    refreshSetupState,
     signInWithMagicLink,
     signOut,
   }
