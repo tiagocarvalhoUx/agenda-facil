@@ -1,4 +1,4 @@
-# PROMPT DE COMANDO — Sistema de Agendamento Multi-Tenant (SaaS)
+[text](../../../../Downloads/prompt-agenda-facil-v2.md)# PROMPT DE COMANDO — Sistema de Agendamento Multi-Tenant (SaaS)
 
 > Cole este prompt num agente de código (Claude Code, Cursor, etc.). Ele assume o papel de **engenheiro de software sênior** e tem foco crítico em **segurança e isolamento do banco de dados**.
 
