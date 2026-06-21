@@ -1,0 +1,22 @@
+# Supabase local config. Project ref is set on `supabase link`.
+project_id = "agenda-saas"
+
+[db]
+port = 54322
+major_version = 15
+
+[api]
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+# Magic Link (sem senha) para dono/profissional.
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true

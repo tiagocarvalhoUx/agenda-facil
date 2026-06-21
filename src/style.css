@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================================
+   DESIGN TOKENS — ADENDO §13
+   Single source of truth. No raw hex in components — always a token.
+   `--accent` is the only per-tenant variable (white-label leve); it is
+   injected at runtime/SSR from the tenant record, with a vertical fallback.
+   ========================================================================= */
+:root {
+  /* Neutros (slate levemente quente — calmo, clínico) */
+  --bg: #fbfbfa;
+  --surface: #ffffff;
+  --surface-2: #f4f5f4;
+  --border: #e4e6e4;
+  --text: #1b2421;
+  --text-muted: #5b6560;
+
+  /* Primária do sistema (navegação, estrutura) — petróleo profundo */
+  --ink: #0e3a36;
+
+  /* Acento configurável por tenant (CTA, seleção, destaque) — default teal */
+  --accent: #0e9f9a;
+  --accent-hover: #0b8783;
+  --accent-soft: #e6f5f4;
+  --on-accent: #ffffff;
+
+  /* Semânticas */
+  --success: #1a7f5a;
+  --warning: #b45309;
+  --danger: #b42318;
+  --info: #1e6fb8;
+
+  /* Motion (ADENDO §13.4) */
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 240ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  color-scheme: light;
+}
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    /* mín. 16px no público — evita zoom no iOS */
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Horários e durações alinham em colunas (ADENDO §13.3) */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Foco visível obrigatório em todo interativo (WCAG §18) */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Respeitar prefers-reduced-motion (§18) */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Eyebrow / metadados (caption uppercase) */
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--text-muted);
+  }
+}

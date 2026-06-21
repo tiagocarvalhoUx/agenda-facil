@@ -1,0 +1,38 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# build
+dist
+dist-ssr
+*.local
+vite.config.*.timestamp-*
+
+# vercel
+.vercel
+
+# env — NUNCA commitar segredos (apenas .env.example vai pro repo)
+.env
+.env.*
+!.env.example
+
+# editor / OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# logs
+logs
+*.log
+npm-debug.log*
+
+# supabase local
+supabase/.branches
+supabase/.temp

@@ -1,0 +1,88 @@
+<script setup lang="ts">
+import { computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { applyAccent } from '@/lib/accent'
+
+// Navegação role-aware (§12): itens que a role não acessa não aparecem
+// (e a rota é protegida no guard, não só escondida).
+const auth = useAuthStore()
+const router = useRouter()
+
+// Accent do tenant aplicado em TODO o painel (§13.1), não só na página pública.
+watch(
+  () => auth.tenant,
+  (t) => {
+    if (t) applyAccent(t.accent_color, t.vertical)
+  },
+  { immediate: true },
+)
+
+interface NavItem {
+  name: string
+  label: string
+  short: string
+  icon: string
+  ownerOnly?: boolean
+}
+// short = rótulo enxuto p/ a bottom bar mobile (evita aperto com 5 itens).
+const allItems: NavItem[] = [
+  { name: 'agenda', label: 'Agenda', short: 'Agenda', icon: '🗓️' },
+  { name: 'clientes', label: 'Clientes', short: 'Clientes', icon: '👥' },
+  { name: 'servicos', label: 'Serviços', short: 'Serviços', icon: '✂️', ownerOnly: true },
+  { name: 'profissionais', label: 'Profissionais', short: 'Equipe', icon: '🧑‍⚕️', ownerOnly: true },
+  { name: 'configuracoes', label: 'Configurações', short: 'Ajustes', icon: '⚙️', ownerOnly: true },
+]
+const items = computed(() => allItems.filter((i) => !i.ownerOnly || auth.isOwner))
+
+async function logout() {
+  await auth.signOut()
+  router.push({ name: 'login' })
+}
+</script>
+
+<template>
+  <div class="min-h-screen bg-bg">
+    <!-- Sidebar desktop -->
+    <aside class="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-border bg-surface p-4 lg:flex">
+      <div class="mb-6 px-2">
+        <p class="eyebrow">Agenda</p>
+        <p class="truncate text-h3 font-display text-text">{{ auth.tenant?.nome ?? '—' }}</p>
+      </div>
+      <nav class="flex flex-1 flex-col gap-1">
+        <RouterLink
+          v-for="item in items"
+          :key="item.name"
+          :to="{ name: item.name }"
+          class="flex min-h-touch items-center gap-3 rounded-md px-3 text-body text-text transition-colors duration-fast hover:bg-surface-2"
+          active-class="bg-accent-soft text-text font-semibold"
+        >
+          <span aria-hidden="true">{{ item.icon }}</span>
+          {{ item.label }}
+        </RouterLink>
+      </nav>
+      <button class="flex min-h-touch items-center gap-3 rounded-md px-3 text-body text-text-muted hover:bg-surface-2" @click="logout">
+        <span aria-hidden="true">↩</span> Sair
+      </button>
+    </aside>
+
+    <!-- Conteúdo -->
+    <main class="pb-20 lg:ml-60 lg:pb-0">
+      <RouterView />
+    </main>
+
+    <!-- Bottom bar mobile (rótulos curtos, sem quebra) -->
+    <nav class="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-surface lg:hidden">
+      <RouterLink
+        v-for="item in items"
+        :key="item.name"
+        :to="{ name: item.name }"
+        class="flex min-h-touch flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-text-muted"
+        active-class="text-accent"
+      >
+        <span class="text-lg leading-none" aria-hidden="true">{{ item.icon }}</span>
+        <span class="w-full truncate text-center text-[11px] leading-tight">{{ item.short }}</span>
+      </RouterLink>
+    </nav>
+  </div>
+</template>
