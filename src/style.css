@@ -41,6 +41,39 @@
   color-scheme: light;
 }
 
+/* =========================================================================
+   TEMA DO PAINEL INTERNO — dark/premium (PROMPT v2 §8.3)
+   Escopo só do /app: sobrescreve os tokens neutros para escuro, mantendo o
+   --accent da marca (white-label) vindo de applyAccent. A página pública e o
+   login continuam claros (não recebem .theme-admin). Glass fica só na chrome
+   (sidebar/headers); cards usam --surface SÓLIDO para preservar contraste AA.
+   Aplicado também nos overlays via Teleport (que recebem a classe theme-admin).
+   ========================================================================= */
+.theme-admin {
+  --bg: #0b1413;
+  --surface: #111d1b;
+  --surface-2: #182623;
+  --border: #26332f;
+  --text: #e9f1ef;
+  --text-muted: #94a4a0;
+  --ink: #0b1413;
+
+  /* destaque suave da marca, translúcido para ler bem sobre escuro */
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --on-accent: #ffffff;
+
+  /* vidro da chrome (sidebar / headers / bottom bar) */
+  --glass: rgba(17, 29, 27, 0.72);
+
+  /* semânticas mais claras p/ legibilidade em fundo escuro */
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --info: #60a5fa;
+
+  color-scheme: dark;
+}
+
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;

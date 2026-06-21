@@ -102,7 +102,7 @@ async function toggleAtivo(p: Professional) {
     </ul>
 
     <Teleport to="body">
-      <div v-if="showForm" class="fixed inset-0 z-50 flex items-end justify-center bg-black/30 sm:items-center" @click.self="showForm = false">
+      <div v-if="showForm" class="theme-admin fixed inset-0 z-50 flex items-end justify-center bg-black/30 sm:items-center" @click.self="showForm = false">
         <div class="w-full max-w-sm rounded-t-lg bg-surface p-5 shadow-lg sm:rounded-lg">
           <h2 class="mb-4 text-h2 font-display text-text">{{ form.id ? 'Editar' : 'Novo' }} profissional</h2>
           <div class="flex flex-col gap-3">

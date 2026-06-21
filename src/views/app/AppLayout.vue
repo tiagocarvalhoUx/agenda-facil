@@ -44,9 +44,9 @@ async function logout() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-bg">
-    <!-- Sidebar desktop -->
-    <aside class="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-border bg-surface p-4 lg:flex">
+  <div class="theme-admin min-h-screen bg-bg text-text">
+    <!-- Sidebar desktop (vidro sutil — §8.3) -->
+    <aside class="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-border bg-[var(--glass)] p-4 backdrop-blur-xl lg:flex">
       <div class="mb-6 px-2">
         <p class="eyebrow">Agenda</p>
         <p class="truncate text-h3 font-display text-text">{{ auth.tenant?.nome ?? '—' }}</p>
@@ -74,7 +74,7 @@ async function logout() {
     </main>
 
     <!-- Bottom bar mobile (rótulos curtos; rolável quando há muitos itens) -->
-    <nav class="fixed inset-x-0 bottom-0 z-40 flex overflow-x-auto border-t border-border bg-surface lg:hidden">
+    <nav class="fixed inset-x-0 bottom-0 z-40 flex overflow-x-auto border-t border-border bg-[var(--glass)] backdrop-blur-xl lg:hidden">
       <RouterLink
         v-for="item in items"
         :key="item.name"

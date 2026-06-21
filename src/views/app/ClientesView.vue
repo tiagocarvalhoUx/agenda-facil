@@ -118,7 +118,7 @@ async function anonimizar(c: Customer) {
 
     <!-- Ficha / drawer do cliente -->
     <Teleport to="body">
-      <div v-if="drawer" class="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/30 sm:items-center" @click.self="drawer = null">
+      <div v-if="drawer" class="theme-admin fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/30 sm:items-center" @click.self="drawer = null">
         <div class="my-4 w-full max-w-sm rounded-t-lg bg-surface p-5 shadow-lg sm:rounded-lg">
           <h2 class="text-h2 font-display text-text">{{ drawer.nome }}</h2>
           <p class="tabular mb-4 text-small text-text-muted">{{ drawer.telefone }}<template v-if="drawer.email"> · {{ drawer.email }}</template></p>

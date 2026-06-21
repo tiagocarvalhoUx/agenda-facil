@@ -283,7 +283,7 @@ async function criar() {
 
     <!-- bottom sheet de ações -->
     <Teleport to="body">
-      <div v-if="selected" class="fixed inset-0 z-50 flex items-end justify-center bg-black/30 sm:items-center" @click.self="selected = null">
+      <div v-if="selected" class="theme-admin fixed inset-0 z-50 flex items-end justify-center bg-black/30 sm:items-center" @click.self="selected = null">
         <div class="w-full max-w-sm rounded-t-lg bg-surface p-5 shadow-lg sm:rounded-lg">
           <div class="mb-4">
             <p class="tabular text-h3 font-semibold text-text">{{ formatHora(selected.inicio_at) }}–{{ formatHora(selected.fim_at) }}</p>
@@ -305,7 +305,7 @@ async function criar() {
 
     <!-- Quick-create -->
     <Teleport to="body">
-      <div v-if="showCreate" class="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/30 sm:items-center" @click.self="showCreate = false">
+      <div v-if="showCreate" class="theme-admin fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/30 sm:items-center" @click.self="showCreate = false">
         <div class="my-4 w-full max-w-sm rounded-t-lg bg-surface p-5 shadow-lg sm:rounded-lg">
           <h2 class="mb-4 text-h2 font-display text-text">Novo agendamento</h2>
           <div v-if="services.length === 0 || professionals.length === 0" class="text-small text-text-muted">
