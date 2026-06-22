@@ -50,11 +50,11 @@ async function logout() {
          atrás de tudo (z-0); o conteúdo sobe para z-10. -->
     <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
       <img
-        src="/logo-agenda.png"
+        src="/bg-logo.png"
         alt=""
-        class="absolute left-1/2 top-1/2 w-[min(82vw,560px)] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-[0.30] blur-[14px]"
+        class="absolute left-1/2 top-1/2 w-[min(82vw,580px)] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-[0.50] blur-[6px]"
       />
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,transparent_0%,var(--bg)_82%)]"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_0%,var(--bg)_85%)]"></div>
     </div>
 
     <!-- Sidebar desktop (vidro sutil — §8.3) -->
