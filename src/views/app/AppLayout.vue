@@ -97,6 +97,15 @@ async function logout() {
         <span class="text-lg leading-none" aria-hidden="true">{{ item.icon }}</span>
         <span class="w-full truncate text-center text-[11px] leading-tight">{{ item.short }}</span>
       </RouterLink>
+      <!-- Sair: a barra é rolável; fica no fim. -->
+      <button
+        class="flex min-h-touch min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-text-muted"
+        aria-label="Sair"
+        @click="logout"
+      >
+        <span class="text-lg leading-none" aria-hidden="true">↩</span>
+        <span class="w-full truncate text-center text-[11px] leading-tight">Sair</span>
+      </button>
     </nav>
   </div>
 </template>
