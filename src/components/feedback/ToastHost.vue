@@ -13,8 +13,11 @@ const icons: Record<string, string> = { success: '✓', error: '!', info: 'i' }
 </script>
 
 <template>
+  <!-- pointer-events-none: o container NÃO intercepta cliques (senão tampa a
+       bottom bar no mobile, já que ambos ficam em bottom-0). Os cards reativam
+       o ponteiro. pb maior no mobile mantém o toast acima da navegação. -->
   <div
-    class="fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-2 p-4 sm:items-end"
+    class="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-2 p-4 pb-24 sm:items-end lg:pb-4"
     aria-live="polite"
     aria-atomic="true"
   >
@@ -22,7 +25,7 @@ const icons: Record<string, string> = { success: '✓', error: '!', info: 'i' }
       <div
         v-for="t in toasts"
         :key="t.id"
-        class="flex w-full max-w-sm items-start gap-3 rounded-md border border-border border-l-4 bg-surface p-4 shadow-md"
+        class="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-md border border-border border-l-4 bg-surface p-4 shadow-md"
         :class="styles[t.kind]"
         role="status"
       >
