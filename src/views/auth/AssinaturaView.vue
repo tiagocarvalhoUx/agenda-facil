@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { fetchBilling, subscribe, type TenantBilling } from '@/lib/billing'
 import { formatPreco } from '@/lib/format'
+import { trackSubscribe } from '@/lib/pixel'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
@@ -36,6 +37,7 @@ async function assinar() {
   assinando.value = true
   try {
     await subscribe({ tenantId: auth.tenant!.id, cpfCnpj: doc, billingType: assina.billingType })
+    trackSubscribe(PLANO_VALOR)
     toast.success('Assinatura criada! Acesso liberado.')
     await auth.refreshBilling()
     router.push({ name: 'agenda' })

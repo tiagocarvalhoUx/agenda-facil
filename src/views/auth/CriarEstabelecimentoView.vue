@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { mapBookingError } from '@/lib/errors'
+import { trackCompleteRegistration } from '@/lib/pixel'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
@@ -48,6 +49,7 @@ async function criar() {
   saving.value = true
   try {
     await auth.createTenant(form.nome, form.slug, form.vertical)
+    trackCompleteRegistration()
     toast.success('Estabelecimento criado! Você tem 7 dias grátis.')
     router.push({ name: 'agenda' })
   } catch (e: unknown) {

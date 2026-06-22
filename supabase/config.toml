@@ -20,3 +20,13 @@ enable_signup = true
 [auth.email]
 enable_signup = true
 enable_confirmations = true
+
+# Login Google. Credenciais via env (NÃO commitar segredos) — defina
+# SUPABASE_AUTH_GOOGLE_CLIENT_ID e SUPABASE_AUTH_GOOGLE_SECRET no .env do
+# diretório supabase, obtidos no Google Cloud Console (OAuth 2.0 Client ID).
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_GOOGLE_SECRET)"
+# skip_nonce_check ajuda no fluxo local; em produção a config é no painel.
+skip_nonce_check = true

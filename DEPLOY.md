@@ -41,6 +41,32 @@ No painel Supabase → **Authentication → URL Configuration**:
 - **Redirect URLs:** adicione `https://SEU-APP.vercel.app/**` (e o domínio custom,
   se houver). Sem isso, o link de acesso redireciona para um host não autorizado.
 
+### 3.1. Login Google (provedor OAuth)
+
+O botão "Entrar com Google" usa `signInWithOAuth({ provider: 'google' })`. Sem o
+provedor habilitado, o Supabase responde `Unsupported provider: provider is not
+enabled`. As credenciais OAuth são geradas no **Google Cloud Console**.
+
+**No Google Cloud Console** ([APIs & Serviços → Credenciais](https://console.cloud.google.com/apis/credentials)):
+
+1. *Criar credenciais → ID do cliente OAuth → Aplicativo da Web*.
+2. **URIs de redirecionamento autorizados** — adicione os dois:
+   - `https://SEU-PROJ.supabase.co/auth/v1/callback` (produção)
+   - `http://127.0.0.1:54321/auth/v1/callback` (dev local)
+3. **Origens JavaScript autorizadas** — `https://agenda-facil-murex.vercel.app`
+   (e `http://localhost:5173` para dev).
+4. Copie o **Client ID** e o **Client Secret**.
+
+**Em produção** (painel Supabase → *Authentication → Providers → Google*):
+
+- Habilite, cole Client ID/Secret e salve.
+- Confirme que `https://agenda-facil-murex.vercel.app/**` está nas Redirect URLs
+  (passo 3) — o app redireciona para `/app` após o login.
+
+**Em dev local:** preencha `supabase/.env` (ver `supabase/.env.example`) com
+`SUPABASE_AUTH_GOOGLE_CLIENT_ID` e `SUPABASE_AUTH_GOOGLE_SECRET` e rode
+`supabase stop && supabase start` para recarregar o `config.toml`.
+
 ## 4. Deploy
 
 A config já está em [`vercel.json`](vercel.json): framework `vite`, build
@@ -95,10 +121,23 @@ No painel Asaas → **Webhooks**, aponte para
 - Trocar de provedor (ex.: Mercado Pago) = implementar a mesma interface em
   `functions/payments/providers.ts`. Nada no resto do app muda.
 
+## 7. Paywall do trial — trava também no banco (RLS)
+
+Além do bloqueio no frontend (router guard → `/assinatura`), a migration
+`20260622120003_billing_enforcement.sql` reforça o paywall na **RLS**: sem
+assinatura ativa e com o trial vencido, o painel **não consegue escrever**
+(INSERT/UPDATE/DELETE) nas tabelas operacionais — nem chamando a API REST direto
+com o token. A leitura continua liberada; o fluxo público de agendamento (RPCs
+`SECURITY DEFINER`) **não** é afetado. Aplica junto no `supabase db push`.
+
+> Validado localmente: dono com trial vencido recebe
+> `new row violates row-level security policy`; com `status='ativo'` o INSERT passa.
+
 ## Checklist rápido
 
-- [ ] `supabase db push` aplicado no projeto de produção
+- [ ] `supabase db push` aplicado no projeto de produção (inclui o reforço de billing na RLS)
 - [ ] `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` definidas na Vercel
 - [ ] Site URL + Redirect URLs configurados no Auth do Supabase
+- [ ] Provedor Google habilitado (painel) + redirect `.../auth/v1/callback` no Google Console
 - [ ] `npm run build` passa localmente
 - [ ] Edge Function `send-reminders` deployada + cron agendado
