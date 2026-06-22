@@ -40,12 +40,14 @@
     />
     <meta name="twitter:image" content="https://agenda-facil-murex.vercel.app/agenda-opengraph.jpg" />
 
-    <!-- Fontes com display=swap + subset (ADENDO §19, performance percebida) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fonte do produto: Onest (self-hosted, variável). Preload do arquivo
+         para reduzir o flash de fonte (ADENDO §19, performance percebida). -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="/fonts/Onest-VariableFont_wght.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
     />
   </head>
   <body>

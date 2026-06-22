@@ -33,8 +33,8 @@ export default {
         info: 'var(--info)',
       },
       fontFamily: {
-        display: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Onest', 'system-ui', 'sans-serif'],
+        sans: ['Onest', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         // token: [size, lineHeight]
