@@ -52,9 +52,9 @@ async function logout() {
       <img
         src="/logo-agenda.png"
         alt=""
-        class="absolute left-1/2 top-1/2 w-[min(90vw,760px)] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-[0.12] blur-[64px]"
+        class="absolute left-1/2 top-1/2 w-[min(82vw,560px)] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-[0.30] blur-[14px]"
       />
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,transparent_0%,var(--bg)_72%)]"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,transparent_0%,var(--bg)_82%)]"></div>
     </div>
 
     <!-- Sidebar desktop (vidro sutil — §8.3) -->
