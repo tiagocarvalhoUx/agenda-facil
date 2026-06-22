@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { applyAccent, accentPassesAA } from '@/lib/accent'
+import { fetchBilling, subscribe, type TenantBilling } from '@/lib/billing'
+import { formatPreco } from '@/lib/format'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
@@ -52,6 +54,47 @@ const publicUrl = ref('')
 onMounted(() => {
   publicUrl.value = `${window.location.origin}/${auth.tenant?.slug ?? ''}`
 })
+
+// ----- Assinatura do SaaS (Asaas) -----
+const PLANO_VALOR = 49
+const billing = ref<TenantBilling | null>(null)
+const billingLoading = ref(true)
+const assinando = ref(false)
+const assina = reactive({ cpfCnpj: '', billingType: 'PIX' as 'PIX' | 'CREDIT_CARD' })
+
+const STATUS_LABEL: Record<string, string> = {
+  inativo: 'Sem assinatura',
+  trial: 'Período de teste',
+  ativo: 'Ativa',
+  atrasado: 'Pagamento atrasado',
+  cancelado: 'Cancelada',
+}
+
+async function loadBilling() {
+  if (!auth.tenant) return
+  billingLoading.value = true
+  billing.value = await fetchBilling(auth.tenant.id)
+  billingLoading.value = false
+}
+onMounted(loadBilling)
+
+async function assinar() {
+  const doc = assina.cpfCnpj.replace(/\D/g, '')
+  if (doc.length !== 11 && doc.length !== 14) {
+    toast.error('Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.')
+    return
+  }
+  assinando.value = true
+  try {
+    await subscribe({ tenantId: auth.tenant!.id, cpfCnpj: doc, billingType: assina.billingType })
+    toast.success('Assinatura criada! A cobrança chegará pelo Asaas.')
+    await loadBilling()
+  } catch (e: unknown) {
+    toast.error('Não foi possível assinar: ' + ((e as { message?: string }).message ?? 'erro'))
+  } finally {
+    assinando.value = false
+  }
+}
 
 async function salvar() {
   if (!form.nome.trim()) {
@@ -132,6 +175,60 @@ async function salvar() {
           <BaseInput v-model="form.cancelamento_ate_horas" label="Cancelar/remarcar até (horas antes)" type="number" inputmode="numeric" />
           <BaseButton :loading="saving" @click="salvar">Salvar</BaseButton>
         </div>
+      </section>
+
+      <section class="rounded-lg border border-border bg-surface p-5">
+        <h2 class="mb-1 text-h2 font-display text-text">Assinatura</h2>
+        <p class="mb-4 text-small text-text-muted">
+          Plano Mensal — <span class="font-semibold text-text">{{ formatPreco(PLANO_VALOR) }}/mês</span>
+        </p>
+
+        <div v-if="billingLoading" class="text-small text-text-muted">Carregando…</div>
+
+        <template v-else>
+          <!-- Já assinante -->
+          <div
+            v-if="billing && ['ativo', 'trial'].includes(billing.status)"
+            class="flex items-center justify-between rounded-md border border-success/40 bg-success/10 p-3"
+          >
+            <div>
+              <p class="text-body font-semibold text-success">✓ Assinatura {{ STATUS_LABEL[billing.status] }}</p>
+              <p class="text-small text-text-muted">
+                {{ billing.plano ?? 'Mensal' }} · {{ formatPreco(billing.valor ?? PLANO_VALOR) }}
+                <template v-if="billing.proximo_vencimento"> · próx. {{ billing.proximo_vencimento }}</template>
+              </p>
+            </div>
+          </div>
+
+          <!-- Atrasada -->
+          <div v-else-if="billing && billing.status === 'atrasado'" class="rounded-md border border-warning/40 bg-warning/10 p-3 text-small text-warning">
+            ⚠ Pagamento atrasado. Verifique a cobrança no e-mail/SMS do Asaas para reativar.
+          </div>
+
+          <!-- Sem assinatura → formulário -->
+          <div v-else class="flex flex-col gap-3">
+            <BaseInput v-model="assina.cpfCnpj" label="CPF ou CNPJ do responsável" inputmode="numeric" placeholder="Somente números" />
+            <div class="flex flex-col gap-1">
+              <label class="text-small font-medium text-text">Forma de pagamento</label>
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  class="min-h-touch flex-1 rounded-md border px-3 text-small transition-colors duration-fast"
+                  :class="assina.billingType === 'PIX' ? 'border-accent bg-accent-soft text-text' : 'border-border text-text-muted'"
+                  @click="assina.billingType = 'PIX'"
+                >Pix</button>
+                <button
+                  type="button"
+                  class="min-h-touch flex-1 rounded-md border px-3 text-small transition-colors duration-fast"
+                  :class="assina.billingType === 'CREDIT_CARD' ? 'border-accent bg-accent-soft text-text' : 'border-border text-text-muted'"
+                  @click="assina.billingType = 'CREDIT_CARD'"
+                >Cartão</button>
+              </div>
+            </div>
+            <BaseButton :loading="assinando" @click="assinar">Assinar {{ formatPreco(PLANO_VALOR) }}/mês</BaseButton>
+            <p class="text-caption text-text-muted">A cobrança é gerada pelo Asaas; você recebe o Pix/boleto/link por e-mail.</p>
+          </div>
+        </template>
       </section>
 
       <section class="rounded-lg border border-border bg-surface p-5">
