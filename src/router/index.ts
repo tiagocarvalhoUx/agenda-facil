@@ -27,6 +27,18 @@ const router = createRouter({
       component: () => import('@/views/auth/LoginView.vue'),
       meta: { public: true },
     },
+    {
+      path: '/criar-estabelecimento',
+      name: 'criar-estabelecimento',
+      component: () => import('@/views/auth/CriarEstabelecimentoView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/assinatura',
+      name: 'assinatura',
+      component: () => import('@/views/auth/AssinaturaView.vue'),
+      meta: { requiresAuth: true },
+    },
 
     // ----- Painel autenticado -----
     {
@@ -83,15 +95,31 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: 'login' }
   }
-  if (to.meta.ownerOnly && !auth.isOwner) {
-    return { name: 'agenda' }
-  }
   if (to.name === 'login' && auth.isAuthenticated) {
     return { name: 'agenda' }
   }
-  // Primeiro acesso do dono sem setup → wizard de onboarding (§8.4).
-  if (to.meta.requiresAuth && auth.needsOnboarding && to.name !== 'onboarding') {
-    return { name: 'onboarding' }
+  if (to.meta.requiresAuth) {
+    // 1) Autenticado mas sem estabelecimento → criar (self-serve).
+    if (!auth.hasTenant && to.name !== 'criar-estabelecimento') {
+      return { name: 'criar-estabelecimento' }
+    }
+    // 2) Trial expirado / sem assinatura ativa → paywall (interrompe o SaaS).
+    if (auth.hasTenant && auth.accessBlocked && to.name !== 'assinatura') {
+      return { name: 'assinatura' }
+    }
+    // 3) Tenant ativo mas sem setup → wizard de onboarding (§8.4).
+    if (
+      auth.hasTenant &&
+      !auth.accessBlocked &&
+      auth.needsOnboarding &&
+      !['onboarding', 'assinatura'].includes(String(to.name))
+    ) {
+      return { name: 'onboarding' }
+    }
+  }
+  // Rotas só de dono.
+  if (to.meta.ownerOnly && !auth.isOwner) {
+    return { name: 'agenda' }
   }
   return true
 })

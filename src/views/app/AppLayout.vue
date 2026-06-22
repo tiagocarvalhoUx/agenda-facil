@@ -82,6 +82,17 @@ async function logout() {
 
     <!-- Conteúdo -->
     <main class="relative z-10 pb-20 lg:ml-60 lg:pb-0">
+      <!-- Banner de teste grátis (durante o trial) -->
+      <RouterLink
+        v-if="auth.trialDaysLeft != null"
+        :to="{ name: 'assinatura' }"
+        class="flex items-center justify-center gap-2 bg-accent-soft px-4 py-2 text-small text-text"
+      >
+        <span aria-hidden="true">⏳</span>
+        Teste grátis: <strong>{{ auth.trialDaysLeft }} dia(s)</strong> restante(s).
+        <span class="font-semibold text-accent underline">Assinar agora</span>
+      </RouterLink>
+
       <RouterView />
     </main>
 
