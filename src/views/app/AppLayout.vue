@@ -44,9 +44,21 @@ async function logout() {
 </script>
 
 <template>
-  <div class="theme-admin min-h-screen bg-bg text-text">
+  <div class="theme-admin relative min-h-screen bg-bg text-text">
+    <!-- Fundo de marca esfumaçado (§8.3): logo grande, borrado e com vinheta
+         radial que o funde no escuro. Decorativo, não captura cliques, fica
+         atrás de tudo (z-0); o conteúdo sobe para z-10. -->
+    <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+      <img
+        src="/logo-agenda.png"
+        alt=""
+        class="absolute left-1/2 top-1/2 w-[min(90vw,760px)] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-[0.12] blur-[64px]"
+      />
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,transparent_0%,var(--bg)_72%)]"></div>
+    </div>
+
     <!-- Sidebar desktop (vidro sutil — §8.3) -->
-    <aside class="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-border bg-[var(--glass)] p-4 backdrop-blur-xl lg:flex">
+    <aside class="fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r border-border bg-[var(--glass)] p-4 backdrop-blur-xl lg:flex">
       <div class="mb-6 px-2">
         <p class="eyebrow">Agenda</p>
         <p class="truncate text-h3 font-display text-text">{{ auth.tenant?.nome ?? '—' }}</p>
@@ -69,7 +81,7 @@ async function logout() {
     </aside>
 
     <!-- Conteúdo -->
-    <main class="pb-20 lg:ml-60 lg:pb-0">
+    <main class="relative z-10 pb-20 lg:ml-60 lg:pb-0">
       <RouterView />
     </main>
 
