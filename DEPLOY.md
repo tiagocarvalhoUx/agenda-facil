@@ -70,6 +70,31 @@ supabase functions deploy send-reminders
 
 E agende via `pg_cron` + `pg_net` (ver `README.md`).
 
+## 6. Pagamento recorrente (Asaas) — Edge Function `payments`
+
+Esqueleto plugável (interface única; Asaas no MVP). A API key é **server-only**.
+
+```bash
+# Segredos (NUNCA no frontend)
+supabase secrets set PAYMENT_PROVIDER=asaas
+supabase secrets set ASAAS_API_KEY="$aact_xxx"      # painel Asaas → Integrações → API
+supabase secrets set ASAAS_ENV=sandbox              # troque p/ production quando for valer
+supabase secrets set ASAAS_WEBHOOK_TOKEN="$(openssl rand -hex 24)"
+
+supabase functions deploy payments
+```
+
+No painel Asaas → **Webhooks**, aponte para
+`https://SEU-PROJ.supabase.co/functions/v1/payments/webhook` e configure o header
+`asaas-access-token` com o mesmo valor de `ASAAS_WEBHOOK_TOKEN`.
+
+- **Assinar (frontend):** `POST .../functions/v1/payments/subscribe` com o JWT do
+  dono no `Authorization` e body `{ tenant_id, plano, valor, ciclo, billingType, cpfCnpj }`.
+  A função valida que o chamador é **owner** do tenant antes de cobrar.
+- O estado fica em `tenant_billing` (o dono só LÊ via RLS; escrita só pela função).
+- Trocar de provedor (ex.: Mercado Pago) = implementar a mesma interface em
+  `functions/payments/providers.ts`. Nada no resto do app muda.
+
 ## Checklist rápido
 
 - [ ] `supabase db push` aplicado no projeto de produção
