@@ -139,9 +139,16 @@ async function confirmCancel() {
     />
 
     <template v-else>
-      <header class="mb-5">
-        <p class="eyebrow">Seu agendamento</p>
-        <h1 class="text-h1 font-display text-text">{{ booking.estabelecimento }}</h1>
+      <header class="mb-5 flex items-center gap-3">
+        <img
+          :src="booking.brand_logo_url || '/logo-agenda.png'"
+          :alt="booking.estabelecimento"
+          class="h-12 w-12 shrink-0 rounded-lg object-contain"
+        />
+        <div>
+          <p class="eyebrow">Seu agendamento</p>
+          <h1 class="text-h1 font-display text-text">{{ booking.estabelecimento }}</h1>
+        </div>
       </header>
 
       <!-- Resumo -->

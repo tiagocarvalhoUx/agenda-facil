@@ -258,6 +258,11 @@ async function submitWaitlist() {
             aria-label="Voltar"
             @click="back"
           >‹</button>
+          <img
+            :src="estab.brand_logo_url || '/logo-agenda.png'"
+            :alt="estab.nome"
+            class="h-12 w-12 shrink-0 rounded-lg object-contain"
+          />
           <div>
             <p class="eyebrow">Agendar</p>
             <h1 class="text-h1 font-display text-text">{{ estab.nome }}</h1>
