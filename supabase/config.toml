@@ -30,3 +30,10 @@ client_id = "env(SUPABASE_AUTH_GOOGLE_CLIENT_ID)"
 secret = "env(SUPABASE_AUTH_GOOGLE_SECRET)"
 # skip_nonce_check ajuda no fluxo local; em produção a config é no painel.
 skip_nonce_check = true
+
+# Edge Function de pagamento. verify_jwt=false porque ela faz a PRÓPRIA auth:
+# /subscribe valida o JWT do dono no código; /webhook valida o token do Asaas
+# (header asaas-access-token). Com verify_jwt=true o gateway barraria o webhook
+# do Asaas (que não manda JWT) com 401 antes de chegar no nosso código.
+[functions.payments]
+verify_jwt = false
