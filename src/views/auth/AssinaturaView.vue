@@ -40,9 +40,16 @@ async function assinar() {
   assinando.value = true
   try {
     await subscribe({ tenantId: auth.tenant!.id, cpfCnpj: doc, billingType: assina.billingType })
-    toast.success('Assinatura criada! Acesso liberado.')
     await auth.refreshBilling()
-    router.push({ name: 'agenda' })
+    // O acesso só libera quando o pagamento confirma (webhook). Se o cliente
+    // ainda está no trial válido, segue para a agenda; senão, fica aguardando.
+    if (!auth.accessBlocked) {
+      toast.success('Assinatura criada! Conclua o pagamento para garantir a continuidade.')
+      router.push({ name: 'agenda' })
+    } else {
+      const via = assina.billingType === 'PIX' ? 'pelo Pix enviado' : 'pelo link enviado ao seu e-mail'
+      toast.success(`Cobrança gerada! Pague ${via}. O acesso é liberado assim que o pagamento for confirmado.`)
+    }
   } catch (e: unknown) {
     toast.error('Não foi possível assinar: ' + ((e as { message?: string }).message ?? 'erro'))
   } finally {

@@ -112,9 +112,14 @@ async function handleSubscribe(req: Request): Promise<Response> {
     nextDueDate: today(),
   })
 
-  await db.from('tenant_billing').upsert(
-    {
-      tenant_id: tenantId,
+  // Grava os dados da assinatura SEM liberar acesso: o status NÃO vira 'ativo'
+  // aqui. O acesso só é liberado quando o webhook confirmar o pagamento
+  // (PAYMENT_CONFIRMED/RECEIVED). Preserva o status atual (ex.: 'trial', para o
+  // cliente continuar acessando enquanto o trial vale e o pagamento processa).
+  // Todo tenant já tem linha em tenant_billing (criada pelo trigger de trial).
+  await db
+    .from('tenant_billing')
+    .update({
       provider: provider.name,
       customer_id: customerId,
       subscription_id: sub.subscriptionId,
@@ -122,13 +127,18 @@ async function handleSubscribe(req: Request): Promise<Response> {
       valor,
       ciclo: cycle,
       billing_type: billingType,
-      status: 'ativo',
       updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'tenant_id' },
-  )
+    })
+    .eq('tenant_id', tenantId)
 
-  return json({ subscriptionId: sub.subscriptionId, status: 'ativo' })
+  // Devolve o estado atual (pode seguir em 'trial' até o pagamento confirmar).
+  const { data: billing } = await db
+    .from('tenant_billing')
+    .select('status')
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
+
+  return json({ subscriptionId: sub.subscriptionId, status: billing?.status ?? 'inativo' })
 }
 
 // ---------------------------------------------------------------------
