@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { fetchBilling, subscribe, type TenantBilling } from '@/lib/billing'
 import { formatPreco } from '@/lib/format'
-import { trackSubscribe } from '@/lib/pixel'
+import { trackInitiateCheckout } from '@/lib/metaPixel'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
@@ -34,10 +34,12 @@ async function assinar() {
     toast.error('Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.')
     return
   }
+  // InitiateCheckout: intenção de pagar (antes de seguir pro checkout). O
+  // Subscribe que vale dinheiro sai do servidor (CAPI) quando o Asaas confirma.
+  trackInitiateCheckout(assina.billingType === 'PIX' ? 'pix' : 'cartao')
   assinando.value = true
   try {
     await subscribe({ tenantId: auth.tenant!.id, cpfCnpj: doc, billingType: assina.billingType })
-    trackSubscribe(PLANO_VALOR)
     toast.success('Assinatura criada! Acesso liberado.')
     await auth.refreshBilling()
     router.push({ name: 'agenda' })

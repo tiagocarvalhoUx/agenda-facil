@@ -15,6 +15,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { getProvider } from './providers.ts'
+import { trackSubscribeCAPI } from './meta.ts'
 
 const TZ = 'America/Sao_Paulo'
 const CORS = {
@@ -171,9 +172,48 @@ async function handleWebhook(req: Request): Promise<Response> {
         .update({ status, updated_at: new Date().toISOString() })
         .eq('subscription_id', ev.subscriptionId)
     }
+
+    // Subscribe (Meta CAPI) — a conversão que vale dinheiro. Dispara UMA vez,
+    // no 1º pagamento confirmado. Como /subscribe já marca 'ativo' na criação,
+    // a trava é a coluna subscribe_tracked_at (claim atômico anti-retry).
+    if (pago) {
+      const { data: claimed } = await db
+        .from('tenant_billing')
+        .update({ subscribe_tracked_at: new Date().toISOString() })
+        .eq('subscription_id', ev.subscriptionId)
+        .is('subscribe_tracked_at', null)
+        .select('tenant_id, valor')
+        .maybeSingle()
+      if (claimed?.tenant_id) {
+        try {
+          await trackSubscribeCAPI({
+            email: await ownerEmail(db, claimed.tenant_id as string),
+            value: Number(claimed.valor ?? 0),
+            eventId: ev.subscriptionId,
+          })
+        } catch (e) {
+          // telemetria nunca derruba o webhook (o billing já foi gravado).
+          console.error('Subscribe CAPI:', String((e as Error).message ?? e))
+        }
+      }
+    }
   }
 
   return json({ received: true })
+}
+
+// E-mail do DONO do tenant (para o match da Meta CAPI). O webhook do Asaas não
+// traz o e-mail; buscamos via membership 'owner' → auth.users (service_role).
+async function ownerEmail(db: ReturnType<typeof service>, tenantId: string): Promise<string | undefined> {
+  const { data: mem } = await db
+    .from('memberships')
+    .select('user_id')
+    .eq('tenant_id', tenantId)
+    .eq('role', 'owner')
+    .maybeSingle()
+  if (!mem?.user_id) return undefined
+  const { data } = await db.auth.admin.getUserById(mem.user_id as string)
+  return data.user?.email ?? undefined
 }
 
 declare const Deno: {

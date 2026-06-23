@@ -121,6 +121,30 @@ No painel Asaas → **Webhooks**, aponte para
 - Trocar de provedor (ex.: Mercado Pago) = implementar a mesma interface em
   `functions/payments/providers.ts`. Nada no resto do app muda.
 
+## 6.1. Rastreamento de conversão (Meta) — o funil real
+
+O funil é medido em dois lados, de propósito:
+
+| Momento | Evento | Onde dispara |
+|---|---|---|
+| `create_tenant` ok + trial de 7 dias | `StartTrial` | navegador (Pixel) |
+| Clicou em "Assinar" → checkout | `InitiateCheckout` | navegador (Pixel) |
+| **Asaas confirma o pagamento (R$49)** | `Subscribe` | **servidor (CAPI, no webhook)** |
+
+> **Por que o Subscribe é server-side:** no Pix o cliente paga no app do banco e
+> pode nem estar com o site aberto quando confirma. Disparar no clique otimizaria
+> a campanha para *clicador*, não *pagante*. Quem sabe que pagou é o webhook do
+> Asaas → por isso o Subscribe sai da Edge Function `payments` (Conversions API),
+> com o e-mail do dono hasheado em SHA-256. Dispara **uma vez** (trava
+> `subscribe_tracked_at`, migration `20260623120001`).
+
+```bash
+# Secrets da CAPI (server-only). Sem eles, o Subscribe vira no-op (não quebra o pagamento).
+supabase secrets set META_PIXEL_ID=2475814112935394   # mesmo id do VITE_META_PIXEL_ID
+supabase secrets set META_CAPI_TOKEN="EAAG..."        # Gerenciador de Eventos → Configurações → Gerar token
+supabase functions deploy payments                    # redeploy após mudar a função
+```
+
 ## 7. Paywall do trial — trava também no banco (RLS)
 
 Além do bloqueio no frontend (router guard → `/assinatura`), a migration
