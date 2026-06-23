@@ -80,6 +80,7 @@ const router = createRouter({
           component: () => import('@/views/app/OnboardingView.vue'),
           meta: { ownerOnly: true },
         },
+        { path: 'suporte', name: 'suporte', component: () => import('@/views/app/SuporteView.vue') },
       ],
     },
 

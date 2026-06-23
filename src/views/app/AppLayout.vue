@@ -35,6 +35,7 @@ const allItems: NavItem[] = [
   { name: 'servicos', label: 'Serviços', short: 'Serviços', icon: '✂️', ownerOnly: true },
   { name: 'profissionais', label: 'Profissionais', short: 'Equipe', icon: '🧑‍⚕️', ownerOnly: true },
   { name: 'configuracoes', label: 'Configurações', short: 'Ajustes', icon: '⚙️', ownerOnly: true },
+  { name: 'suporte', label: 'Suporte', short: 'Suporte', icon: '💬' },
 ]
 const items = computed(() => allItems.filter((i) => !i.ownerOnly || auth.isOwner))
 
