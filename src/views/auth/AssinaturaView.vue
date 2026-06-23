@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
@@ -21,12 +21,57 @@ const loading = ref(true)
 const assinando = ref(false)
 const assina = reactive({ cpfCnpj: '', billingType: 'PIX' as 'PIX' | 'CREDIT_CARD' })
 
+// Estado "aguardando confirmação do pagamento": após gerar a cobrança sem
+// acesso imediato, a tela fica escutando o billing até virar 'ativo' (webhook).
+const aguardando = ref(false)
+const verificando = ref(false)
+let pollId: ReturnType<typeof setInterval> | null = null
+
 const emTrial = computed(() => auth.trialDaysLeft != null && auth.trialDaysLeft > 0)
 
 onMounted(async () => {
   if (auth.tenant) billing.value = await fetchBilling(auth.tenant.id)
   loading.value = false
 })
+
+onUnmounted(stopPolling)
+
+function stopPolling() {
+  if (pollId) {
+    clearInterval(pollId)
+    pollId = null
+  }
+}
+
+// Recarrega o billing; se o acesso liberou (pagamento confirmado), entra no app.
+async function checarLiberacao(): Promise<boolean> {
+  await auth.refreshBilling()
+  if (!auth.accessBlocked) {
+    stopPolling()
+    aguardando.value = false
+    toast.success('Pagamento confirmado! Acesso liberado.')
+    router.push({ name: 'agenda' })
+    return true
+  }
+  return false
+}
+
+function startPolling() {
+  stopPolling()
+  aguardando.value = true
+  pollId = setInterval(() => void checarLiberacao(), 5000) // a cada 5s
+}
+
+// Botão "Já paguei? Verificar agora" — checagem manual imediata.
+async function verificarAgora() {
+  verificando.value = true
+  try {
+    const liberou = await checarLiberacao()
+    if (!liberou) toast.error('Pagamento ainda não confirmado. Pode levar alguns instantes.')
+  } finally {
+    verificando.value = false
+  }
+}
 
 async function assinar() {
   const doc = assina.cpfCnpj.replace(/\D/g, '')
@@ -49,6 +94,7 @@ async function assinar() {
     } else {
       const via = assina.billingType === 'PIX' ? 'pelo Pix enviado' : 'pelo link enviado ao seu e-mail'
       toast.success(`Cobrança gerada! Pague ${via}. O acesso é liberado assim que o pagamento for confirmado.`)
+      startPolling() // a tela passa a escutar a confirmação do pagamento
     }
   } catch (e: unknown) {
     toast.error('Não foi possível assinar: ' + ((e as { message?: string }).message ?? 'erro'))
@@ -76,6 +122,22 @@ async function sair() {
       </p>
 
       <div v-if="loading" class="text-small text-text-muted">Carregando…</div>
+
+      <!-- Aguardando confirmação do pagamento (escuta o webhook via polling) -->
+      <div v-else-if="aguardando" class="flex flex-col gap-4">
+        <div class="flex items-center gap-3 rounded-md border border-border bg-surface-2 p-3">
+          <span class="h-2.5 w-2.5 flex-shrink-0 animate-pulse rounded-full bg-accent"></span>
+          <p class="text-small text-text">
+            Aguardando a confirmação do pagamento…<br />
+            <span class="text-text-muted">
+              Pague {{ assina.billingType === 'PIX' ? 'pelo Pix' : 'pelo link enviado ao seu e-mail' }}.
+              O acesso libera automaticamente assim que o Asaas confirmar.
+            </span>
+          </p>
+        </div>
+        <BaseButton :loading="verificando" block @click="verificarAgora">Já paguei? Verificar agora</BaseButton>
+        <button class="text-small text-text-muted underline" @click="sair">Sair</button>
+      </div>
 
       <!-- Dono assina -->
       <div v-else-if="auth.isOwner" class="flex flex-col gap-4">
