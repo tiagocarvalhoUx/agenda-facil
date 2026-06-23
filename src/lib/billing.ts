@@ -41,7 +41,7 @@ export async function subscribe(params: {
     body: JSON.stringify({
       tenant_id: params.tenantId,
       plano: 'Mensal',
-      valor: 1.0, // TESTE TEMPORÁRIO — voltar para 49.90 após validar o Pix
+      valor: 5.0, // TESTE TEMPORÁRIO — voltar para 49.90 após validar o Pix
 
       ciclo: 'MONTHLY',
       billingType: params.billingType,
