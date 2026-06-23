@@ -63,11 +63,13 @@
       fbq('init', '%VITE_META_PIXEL_ID%');
       fbq('track', 'PageView');
     </script>
-    <noscript><img height="1" width="1" style="display:none"
-      src="https://www.facebook.com/tr?id=%VITE_META_PIXEL_ID%&ev=PageView&noscript=1"/></noscript>
     <!-- End Meta Pixel -->
   </head>
   <body>
+    <!-- Meta Pixel (noscript): precisa ficar no <body>; dentro do <head> o
+         parser de HTML rejeita <img> em <noscript> e quebra o build do Vite. -->
+    <noscript><img height="1" width="1" style="display:none"
+      src="https://www.facebook.com/tr?id=%VITE_META_PIXEL_ID%&ev=PageView&noscript=1"/></noscript>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
