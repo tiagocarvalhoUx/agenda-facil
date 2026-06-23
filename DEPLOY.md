@@ -53,14 +53,14 @@ enabled`. As credenciais OAuth são geradas no **Google Cloud Console**.
 2. **URIs de redirecionamento autorizados** — adicione os dois:
    - `https://SEU-PROJ.supabase.co/auth/v1/callback` (produção)
    - `http://127.0.0.1:54321/auth/v1/callback` (dev local)
-3. **Origens JavaScript autorizadas** — `https://agenda-facil-murex.vercel.app`
+3. **Origens JavaScript autorizadas** — `https://agenda-facil-up.vercel.app`
    (e `http://localhost:5173` para dev).
 4. Copie o **Client ID** e o **Client Secret**.
 
 **Em produção** (painel Supabase → *Authentication → Providers → Google*):
 
 - Habilite, cole Client ID/Secret e salve.
-- Confirme que `https://agenda-facil-murex.vercel.app/**` está nas Redirect URLs
+- Confirme que `https://agenda-facil-up.vercel.app/**` está nas Redirect URLs
   (passo 3) — o app redireciona para `/app` após o login.
 
 **Em dev local:** preencha `supabase/.env` (ver `supabase/.env.example`) com
