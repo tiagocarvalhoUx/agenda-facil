@@ -22,10 +22,10 @@ export const trackPageView = () => track('PageView')
 
 // Estabelecimento criado + trial de 7 dias iniciado.
 export const trackStartTrial = () =>
-  track('StartTrial', { value: 49, currency: 'BRL', predicted_ltv: 49 * 12 })
+  track('StartTrial', { value: 49.9, currency: 'BRL', predicted_ltv: 49.9 * 12 })
 
 // Clicou em "Assinar" e seguiu para o checkout.
 export const trackInitiateCheckout = (metodo: 'pix' | 'cartao') =>
-  track('InitiateCheckout', { value: 49, currency: 'BRL', content_name: `plano_${metodo}` })
+  track('InitiateCheckout', { value: 49.9, currency: 'BRL', content_name: `plano_${metodo}` })
 
 export {}
