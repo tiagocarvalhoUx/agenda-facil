@@ -15,7 +15,7 @@ const auth = useAuthStore()
 const router = useRouter()
 const toast = useToast()
 
-const PLANO_VALOR = 49
+const PLANO_VALOR = 1 // TESTE TEMPORÁRIO — voltar para 49.90 após validar o Pix
 const billing = ref<TenantBilling | null>(null)
 const loading = ref(true)
 const assinando = ref(false)
