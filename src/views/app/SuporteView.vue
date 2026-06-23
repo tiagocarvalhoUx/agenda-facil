@@ -36,9 +36,11 @@ const whatsLink = computed(() => {
           <p class="text-body font-semibold text-text">Atendimento por WhatsApp</p>
           <p class="mt-0.5 text-small text-text-muted">
             Tire dúvidas sobre o uso, relate um problema ou registre uma reclamação.
-            Costumamos responder em horário comercial.
           </p>
           <p class="mt-3 text-h3 font-display text-text">{{ WHATS_DISPLAY }}</p>
+          <p class="mt-1 flex items-center gap-1.5 text-small text-text-muted">
+            <span aria-hidden="true">🕒</span> Atendimento: <strong class="text-text">Seg–Sex, 9h–18h</strong>
+          </p>
         </div>
       </div>
       <a :href="whatsLink" target="_blank" rel="noopener" class="mt-4 block">
