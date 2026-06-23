@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, watch, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { applyAccent } from '@/lib/accent'
+import BaseButton from '@/components/ui/BaseButton.vue'
 
 // Navegação role-aware (§12): itens que a role não acessa não aparecem
 // (e a rota é protegida no guard, não só escondida).
@@ -40,6 +41,23 @@ const items = computed(() => allItems.filter((i) => !i.ownerOnly || auth.isOwner
 async function logout() {
   await auth.signOut()
   router.push({ name: 'login' })
+}
+
+// Modal de boas-vindas do trial: mostra UMA vez por estabelecimento, quando o
+// dono entra no app durante o teste grátis. Persistência por localStorage para
+// não reaparecer a cada login.
+const showWelcome = ref(false)
+watch(
+  () => [auth.tenant?.id, auth.trialDaysLeft] as const,
+  ([tid, dias]) => {
+    if (!tid || dias == null) return // só durante o trial e com tenant carregado
+    if (!localStorage.getItem(`welcome_trial_seen_${tid}`)) showWelcome.value = true
+  },
+  { immediate: true },
+)
+function fecharWelcome() {
+  if (auth.tenant) localStorage.setItem(`welcome_trial_seen_${auth.tenant.id}`, '1')
+  showWelcome.value = false
 }
 </script>
 
@@ -118,5 +136,34 @@ async function logout() {
         <span class="w-full truncate text-center text-[11px] leading-tight">Sair</span>
       </button>
     </nav>
+
+    <!-- Modal de boas-vindas (trial) — aparece 1x ao entrar no app durante o teste -->
+    <Teleport to="body">
+      <div
+        v-if="showWelcome"
+        class="theme-admin fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+        @click.self="fecharWelcome"
+      >
+        <div class="w-full max-w-sm rounded-t-lg bg-surface p-6 shadow-lg sm:rounded-lg">
+          <p class="eyebrow">Bem-vindo</p>
+          <h2 class="mb-2 text-h2 font-display text-text">Seu teste grátis começou! 🎉</h2>
+          <p class="mb-4 text-small text-text-muted">
+            Você tem <strong class="text-text">{{ auth.trialDaysLeft }} dia(s) grátis</strong> para usar a
+            <strong class="text-text">{{ auth.tenant?.nome }}</strong> por completo — sem precisar de cartão agora.
+          </p>
+          <ul class="mb-5 flex flex-col gap-2 text-small text-text">
+            <li class="flex gap-2"><span aria-hidden="true">🗓️</span> Agenda completa e organização da equipe</li>
+            <li class="flex gap-2"><span aria-hidden="true">🔗</span> Link público pro cliente marcar sozinho</li>
+            <li class="flex gap-2"><span aria-hidden="true">🔔</span> Lembretes automáticos pra reduzir faltas</li>
+          </ul>
+          <BaseButton block @click="fecharWelcome">Começar a usar</BaseButton>
+          <RouterLink
+            :to="{ name: 'assinatura' }"
+            class="mt-3 block text-center text-small text-text-muted underline"
+            @click="fecharWelcome"
+          >Ver o plano e assinar</RouterLink>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
