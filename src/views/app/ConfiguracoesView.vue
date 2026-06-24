@@ -56,7 +56,7 @@ onMounted(() => {
 })
 
 // ----- Assinatura do SaaS (Asaas) -----
-const PLANO_VALOR = 49
+const PLANO_VALOR = 49.9
 const billing = ref<TenantBilling | null>(null)
 const billingLoading = ref(true)
 const assinando = ref(false)
@@ -186,10 +186,11 @@ async function salvar() {
         <div v-if="billingLoading" class="text-small text-text-muted">Carregando…</div>
 
         <template v-else>
-          <!-- Já assinante -->
-          <div
+          <!-- Já assinante / em trial → área clicável para as formas de pagamento -->
+          <RouterLink
             v-if="billing && ['ativo', 'trial'].includes(billing.status)"
-            class="flex items-center justify-between rounded-md border border-success/40 bg-success/10 p-3"
+            :to="{ name: 'assinatura' }"
+            class="flex items-center justify-between gap-3 rounded-md border border-success/40 bg-success/10 p-3 transition-colors duration-fast hover:bg-success/20"
           >
             <div>
               <p class="text-body font-semibold text-success">✓ Assinatura {{ STATUS_LABEL[billing.status] }}</p>
@@ -197,8 +198,12 @@ async function salvar() {
                 {{ billing.plano ?? 'Mensal' }} · {{ formatPreco(billing.valor ?? PLANO_VALOR) }}
                 <template v-if="billing.proximo_vencimento"> · próx. {{ billing.proximo_vencimento }}</template>
               </p>
+              <p class="mt-1 text-caption font-medium text-accent">
+                {{ billing.status === 'trial' ? 'Assinar agora · ver formas de pagamento' : 'Gerenciar pagamento' }}
+              </p>
             </div>
-          </div>
+            <span class="text-lg text-text-muted" aria-hidden="true">›</span>
+          </RouterLink>
 
           <!-- Atrasada -->
           <div v-else-if="billing && billing.status === 'atrasado'" class="rounded-md border border-warning/40 bg-warning/10 p-3 text-small text-warning">
