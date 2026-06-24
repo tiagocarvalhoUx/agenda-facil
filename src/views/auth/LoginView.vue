@@ -45,15 +45,28 @@ async function submit() {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-bg px-4">
-    <div class="w-full max-w-sm rounded-lg border border-border bg-surface p-6 shadow-sm">
+  <div class="min-h-screen bg-bg px-4" :class="signup ? 'py-8' : 'flex items-center justify-center'">
+    <div
+      class="mx-auto w-full overflow-hidden rounded-lg border border-border bg-surface p-6 shadow-sm"
+      :class="signup ? 'max-w-md' : 'max-w-sm'"
+    >
+      <!-- Hero (só na landing de aquisição): mostra o produto ANTES do CTA,
+           reduzindo a fricção de "não sei o que é isso". Sangra até as bordas. -->
+      <img
+        v-if="signup"
+        src="/agenda-opengraph.jpg"
+        alt="Agenda Fácil — agendamento online para clínicas, salões e consultórios"
+        width="1200"
+        height="800"
+        class="-mx-6 -mt-6 mb-5 w-[calc(100%+3rem)] max-w-none border-b border-border"
+      />
       <p class="eyebrow">{{ signup ? 'Agenda Fácil' : 'Painel' }}</p>
-      <h1 class="text-h1 font-display text-text" :class="signup ? 'mb-2' : 'mb-5'">
-        {{ signup ? 'Comece grátis' : 'Entrar' }}
+      <h1 class="font-display text-text" :class="signup ? 'mb-2 text-h1 leading-tight' : 'mb-5 text-h1'">
+        {{ signup ? 'Sua agenda online em minutos' : 'Entrar' }}
       </h1>
-      <p v-if="signup && !sent" class="mb-5 text-small text-text-muted">
-        <strong class="text-text">7 dias grátis</strong>, sem cartão. Seu cliente marca, remarca e
-        cancela sozinho — sem WhatsApp manual.
+      <p v-if="signup && !sent" class="mb-5 text-body text-text-muted">
+        Seu cliente marca, remarca e cancela sozinho — sem WhatsApp manual.
+        <strong class="text-text">7 dias grátis</strong>, sem cartão.
       </p>
 
       <div v-if="!sent" class="flex flex-col gap-4">
@@ -115,6 +128,29 @@ async function submit() {
           </template>
         </p>
       </div>
+
+      <!-- Prova de valor (só na landing): selos de confiança + benefícios. -->
+      <template v-if="signup">
+        <div class="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-caption text-text-muted">
+          <span class="flex items-center gap-1"><span class="text-success" aria-hidden="true">✓</span> 7 dias grátis</span>
+          <span class="flex items-center gap-1"><span class="text-success" aria-hidden="true">✓</span> Sem cartão</span>
+          <span class="flex items-center gap-1"><span class="text-success" aria-hidden="true">✓</span> Cancele quando quiser</span>
+        </div>
+        <ul class="mt-5 grid gap-3 border-t border-border pt-5 text-small text-text">
+          <li class="flex items-start gap-3">
+            <span class="text-lg leading-none" aria-hidden="true">🗓️</span>
+            <span><strong>Agenda online 24h</strong> — seu cliente marca a qualquer hora, sem te ligar.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-lg leading-none" aria-hidden="true">🔔</span>
+            <span><strong>Lembretes automáticos</strong> — menos faltas e remarcações de última hora.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-lg leading-none" aria-hidden="true">🔗</span>
+            <span><strong>Seu link exclusivo</strong> — divulgue no Instagram e no WhatsApp.</span>
+          </li>
+        </ul>
+      </template>
     </div>
   </div>
 </template>
