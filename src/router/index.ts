@@ -27,6 +27,14 @@ const router = createRouter({
       component: () => import('@/views/auth/LoginView.vue'),
       meta: { public: true },
     },
+    // Landing de aquisição (anúncios): mesma tela, copy de cadastro/teste grátis.
+    {
+      path: '/comecar',
+      name: 'comecar',
+      alias: ['/cadastro', '/signup'],
+      component: () => import('@/views/auth/LoginView.vue'),
+      meta: { public: true },
+    },
     {
       path: '/criar-estabelecimento',
       name: 'criar-estabelecimento',
@@ -96,7 +104,7 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: 'login' }
   }
-  if (to.name === 'login' && auth.isAuthenticated) {
+  if ((to.name === 'login' || to.name === 'comecar') && auth.isAuthenticated) {
     return { name: 'agenda' }
   }
   if (to.meta.requiresAuth) {
