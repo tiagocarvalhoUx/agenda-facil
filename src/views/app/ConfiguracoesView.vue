@@ -180,7 +180,11 @@ async function salvar() {
       <section class="rounded-lg border border-border bg-surface p-5">
         <h2 class="mb-1 text-h2 font-display text-text">Assinatura</h2>
         <p class="mb-4 text-small text-text-muted">
-          Plano Mensal — <span class="font-semibold text-text">{{ formatPreco(PLANO_VALOR) }}/mês</span>
+          Plano Mensal —
+          <RouterLink
+            :to="{ name: 'assinatura' }"
+            class="font-semibold text-accent underline underline-offset-2 transition-opacity hover:opacity-80"
+          >{{ formatPreco(PLANO_VALOR) }}/mês</RouterLink>
         </p>
 
         <div v-if="billingLoading" class="text-small text-text-muted">Carregando…</div>
