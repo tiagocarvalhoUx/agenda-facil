@@ -8,3 +8,13 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.mount('#app')
+
+// Service Worker do PWA: habilita Web Push (notificação de novo agendamento
+// mesmo com o app fechado). Registro silencioso — se falhar, o app segue normal.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      /* sem SW o painel funciona; só não recebe push offline */
+    })
+  })
+}

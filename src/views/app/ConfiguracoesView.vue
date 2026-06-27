@@ -3,6 +3,7 @@ import { ref, reactive, watch, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
+import { usePushNotifications, pushSupported } from '@/composables/usePushNotifications'
 import { applyAccent, accentPassesAA } from '@/lib/accent'
 import { fetchBilling, subscribe, type TenantBilling } from '@/lib/billing'
 import { formatPreco } from '@/lib/format'
@@ -54,6 +55,28 @@ const publicUrl = ref('')
 onMounted(() => {
   publicUrl.value = `${window.location.origin}/${auth.tenant?.slug ?? ''}`
 })
+
+// ----- Notificações (Web Push) -----
+// Liga/desliga o push DESTE dispositivo. iOS exige o app instalado na tela
+// inicial — por isso o aviso quando não há suporte.
+const push = usePushNotifications()
+const { subscribed: pushOn, busy: pushBusy } = push
+onMounted(() => void push.refresh())
+
+async function toggleNotificacoes() {
+  try {
+    if (push.subscribed.value) {
+      await push.disable()
+      toast.info('Notificações desativadas neste dispositivo.')
+    } else {
+      const ok = await push.enable()
+      if (ok) toast.success('Notificações ativadas! Você será avisado de novos agendamentos.')
+      else toast.error('Permissão de notificação negada pelo navegador.')
+    }
+  } catch (e) {
+    toast.error((e as Error).message || 'Não foi possível alterar as notificações.')
+  }
+}
 
 // ----- Assinatura do SaaS (Asaas) -----
 const PLANO_VALOR = 49.9
@@ -159,6 +182,35 @@ async function salvar() {
 
           <BaseButton :loading="saving" @click="salvar">Salvar</BaseButton>
         </div>
+      </section>
+
+      <section class="rounded-lg border border-border bg-surface p-5">
+        <h2 class="mb-1 text-h2 font-display text-text">Notificações</h2>
+        <p class="mb-4 text-small text-text-muted">
+          Receba um aviso no celular ou computador assim que um cliente agendar pelo seu link — mesmo com o app fechado.
+        </p>
+
+        <template v-if="pushSupported">
+          <div class="flex items-center justify-between gap-3 rounded-md bg-surface-2 p-3">
+            <div>
+              <p class="text-small font-medium text-text">Avisos neste dispositivo</p>
+              <p class="text-caption text-text-muted">
+                {{ pushOn ? 'Ativado — você receberá notificações aqui.' : 'Desativado neste aparelho.' }}
+              </p>
+            </div>
+            <BaseButton :loading="pushBusy" :variant="pushOn ? 'ghost' : 'primary'" @click="toggleNotificacoes">
+              {{ pushOn ? 'Desativar' : 'Ativar' }}
+            </BaseButton>
+          </div>
+          <p class="mt-2 text-caption text-text-muted">
+            Ative em cada aparelho onde quiser receber (celular e computador, por exemplo).
+          </p>
+        </template>
+
+        <p v-else class="rounded-md bg-warning/10 p-3 text-small text-text-muted">
+          Este navegador não suporta notificações push. No iPhone, toque em
+          <strong class="text-text">Compartilhar → Adicionar à Tela de Início</strong> e abra por lá para habilitar.
+        </p>
       </section>
 
       <section class="rounded-lg border border-border bg-surface p-5">

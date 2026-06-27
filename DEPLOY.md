@@ -145,6 +145,46 @@ supabase secrets set META_CAPI_TOKEN="EAAG..."        # Gerenciador de Eventos �
 supabase functions deploy payments                    # redeploy após mudar a função
 ```
 
+## 6.2. Notificações de novo agendamento (Web Push) — Edge Function `notify-booking`
+
+Quando um cliente agenda pelo link público, o **dono** recebe uma notificação
+nativa (desktop + Android; iPhone só com o app "Adicionar à Tela de Início") e,
+com o painel aberto, toast + som + badge via Realtime.
+
+```bash
+# 1. Gere o par de chaves VAPID (uma vez por projeto).
+npx web-push generate-vapid-keys
+
+# 2. Secrets da Edge Function (a PRIVADA é server-only).
+supabase secrets set VAPID_PUBLIC_KEY="B..."           # mesma do VITE_VAPID_PUBLIC_KEY
+supabase secrets set VAPID_PRIVATE_KEY="..."           # NUNCA no frontend
+supabase secrets set VAPID_SUBJECT="mailto:voce@dominio.com"
+supabase secrets set NOTIFY_SECRET="$(openssl rand -hex 32)"
+
+# 3. Deploy da função.
+supabase functions deploy notify-booking
+```
+
+- A **chave pública** também vai na Vercel como `VITE_VAPID_PUBLIC_KEY` (build-time).
+- Diga ao banco para onde chamar e com qual segredo (uma vez por ambiente). Rode no
+  SQL Editor do projeto, usando o **mesmo** `NOTIFY_SECRET` do passo 2:
+
+  ```sql
+  insert into private_notify_config (id, function_url, secret)
+  values (
+    true,
+    'https://SEU-PROJ.supabase.co/functions/v1/notify-booking',
+    'O_MESMO_NOTIFY_SECRET'
+  )
+  on conflict (id) do update
+    set function_url = excluded.function_url, secret = excluded.secret;
+  ```
+
+- O `Realtime` precisa estar habilitado para a tabela `appointments` (a migration
+  já faz `alter publication supabase_realtime add table appointments`). A RLS
+  garante que cada dono só recebe eventos do próprio tenant.
+- O dono ativa o push em **Configurações → Notificações** (uma vez por aparelho).
+
 ## 7. Paywall do trial — trava também no banco (RLS)
 
 Além do bloqueio no frontend (router guard → `/assinatura`), a migration
@@ -165,3 +205,4 @@ com o token. A leitura continua liberada; o fluxo público de agendamento (RPCs
 - [ ] Provedor Google habilitado (painel) + redirect `.../auth/v1/callback` no Google Console
 - [ ] `npm run build` passa localmente
 - [ ] Edge Function `send-reminders` deployada + cron agendado
+- [ ] Edge Function `notify-booking` deployada + secrets VAPID/NOTIFY + `private_notify_config` preenchida + `VITE_VAPID_PUBLIC_KEY` na Vercel

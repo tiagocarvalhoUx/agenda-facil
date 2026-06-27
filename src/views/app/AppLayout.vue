@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, watch, ref } from 'vue'
+import { computed, watch, ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useNewBookings } from '@/composables/useNewBookings'
 import { applyAccent } from '@/lib/accent'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
@@ -9,6 +10,26 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 // (e a rota é protegida no guard, não só escondida).
 const auth = useAuthStore()
 const router = useRouter()
+
+// Notificações em tempo real (app aberto): liga o canal do tenant e expõe o
+// contador de novos agendamentos para o badge do menu "Agenda".
+const { unreadCount, start, stop, resetUnread } = useNewBookings()
+watch(
+  () => auth.tenant?.id,
+  (id) => {
+    if (id) start(id)
+  },
+  { immediate: true },
+)
+onUnmounted(stop)
+
+// Zera o badge ao entrar na Agenda (o dono "viu" os novos).
+watch(
+  () => router.currentRoute.value.name,
+  (name) => {
+    if (name === 'agenda') resetUnread()
+  },
+)
 
 // Accent do tenant aplicado em TODO o painel (§13.1), não só na página pública.
 watch(
@@ -92,6 +113,11 @@ function fecharWelcome() {
         >
           <span aria-hidden="true">{{ item.icon }}</span>
           {{ item.label }}
+          <span
+            v-if="item.name === 'agenda' && unreadCount > 0"
+            class="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-bold leading-5 text-white"
+            aria-label="novos agendamentos"
+          >{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
         </RouterLink>
       </nav>
       <button class="flex min-h-touch items-center gap-3 rounded-md px-3 text-body text-text-muted hover:bg-surface-2" @click="logout">
@@ -124,7 +150,13 @@ function fecharWelcome() {
         class="flex min-h-touch min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-text-muted"
         active-class="text-accent"
       >
-        <span class="text-lg leading-none" aria-hidden="true">{{ item.icon }}</span>
+        <span class="relative text-lg leading-none" aria-hidden="true">
+          {{ item.icon }}
+          <span
+            v-if="item.name === 'agenda' && unreadCount > 0"
+            class="absolute -right-2 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold leading-4 text-white"
+          >{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+        </span>
         <span class="w-full truncate text-center text-[11px] leading-tight">{{ item.short }}</span>
       </RouterLink>
       <!-- Sair: a barra é rolável; fica no fim. -->

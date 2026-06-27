@@ -1,0 +1,15 @@
+{
+  "name": "Agenda Fácil",
+  "short_name": "Agenda",
+  "description": "Agendamento online — painel do estabelecimento.",
+  "start_url": "/app/agenda",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B0B0C",
+  "theme_color": "#0E9F9A",
+  "icons": [
+    { "src": "/favicon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

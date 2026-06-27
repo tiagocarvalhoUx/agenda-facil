@@ -3,6 +3,7 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
+import { useNewBookings } from '@/composables/useNewBookings'
 import { formatHora, formatDataLonga, toDateParam } from '@/lib/format'
 import type { AppointmentStatus, Service, Professional } from '@/types/database.types'
 import AppointmentCard from '@/components/agenda/AppointmentCard.vue'
@@ -75,6 +76,19 @@ function shift(days: number) {
 
 watch(date, load)
 onMounted(load)
+
+// Realtime: quando um novo agendamento público chega e é do dia em exibição,
+// recarrega a lista para mostrá-lo sem o dono precisar atualizar a página.
+const { onNewBooking } = useNewBookings()
+const offNewBooking = onNewBooking((b) => {
+  const start = new Date(date.value)
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 1)
+  const t = new Date(b.inicio_at).getTime()
+  if (t >= start.getTime() && t < end.getTime()) void load()
+})
+onUnmounted(() => offNewBooking())
 
 // ---- Trilho de horário vivo (§13.5) ----
 // Em uma lista vertical, o "agora" é inserido na posição cronológica certa:

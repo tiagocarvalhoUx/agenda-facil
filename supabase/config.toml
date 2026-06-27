@@ -31,6 +31,12 @@ secret = "env(SUPABASE_AUTH_GOOGLE_SECRET)"
 # skip_nonce_check ajuda no fluxo local; em produção a config é no painel.
 skip_nonce_check = true
 
+# Edge Function de notificação de novo agendamento. verify_jwt=false porque a
+# chamada vem do trigger no banco (pg_net), não de um usuário logado — ela valida
+# o próprio segredo NOTIFY_SECRET no header Authorization.
+[functions.notify-booking]
+verify_jwt = false
+
 # Edge Function de pagamento. verify_jwt=false porque ela faz a PRÓPRIA auth:
 # /subscribe valida o JWT do dono no código; /webhook valida o token do Asaas
 # (header asaas-access-token). Com verify_jwt=true o gateway barraria o webhook
