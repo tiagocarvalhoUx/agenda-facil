@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
   const { data: appt, error: apptErr } = await supabase
     .from('appointments')
     .select(
-      'tenant_id, inicio_at, customer:customers(nome), service:services(nome), professional:professionals(nome)',
+      'tenant_id, inicio_at, customer:customers(nome), service:services(nome), professional:professionals(nome, user_id)',
     )
     .eq('id', appointment_id)
     .maybeSingle()
@@ -61,22 +61,27 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: apptErr?.message ?? 'not found' }), { status: 404 })
   }
 
-  // Donos do tenant.
+  // Destinatários: TODOS os donos do tenant + o profissional designado neste
+  // agendamento (se tiver login). Staff só vê a própria agenda, então notificar
+  // outros profissionais sobre um horário que não é deles não faz sentido.
   const { data: owners } = await supabase
     .from('memberships')
     .select('user_id')
     .eq('tenant_id', appt.tenant_id)
     .eq('role', 'owner')
 
-  const ownerIds = (owners ?? []).map((m) => m.user_id)
-  if (ownerIds.length === 0) {
+  const recipientIds = new Set<string>((owners ?? []).map((m) => m.user_id))
+  const profUserId = (appt.professional as { user_id: string | null } | null)?.user_id
+  if (profUserId) recipientIds.add(profUserId)
+
+  if (recipientIds.size === 0) {
     return new Response(JSON.stringify({ enviados: 0 }), { headers: { 'Content-Type': 'application/json' } })
   }
 
   const { data: subs } = await supabase
     .from('push_subscriptions')
     .select('id, endpoint, p256dh, auth')
-    .in('user_id', ownerIds)
+    .in('user_id', [...recipientIds])
 
   const customer = (appt.customer as { nome: string } | null)?.nome ?? 'Cliente'
   const servico = (appt.service as { nome: string } | null)?.nome ?? 'Serviço'
