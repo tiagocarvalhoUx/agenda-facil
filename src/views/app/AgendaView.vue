@@ -229,11 +229,36 @@ async function criar() {
         <p class="eyebrow">Agenda</p>
         <h1 class="text-h1 font-display capitalize text-text">{{ formatDataLonga(date) }}</h1>
       </div>
-      <div class="flex items-center gap-1">
-        <button class="flex h-touch w-touch items-center justify-center rounded-md border border-border disabled:opacity-40" :disabled="!canGoBack" aria-label="Dia anterior" @click="shift(-1)">‹</button>
-        <button v-if="!isToday" class="min-h-touch rounded-md border border-border px-3 text-small" @click="date = new Date()">Hoje</button>
-        <button class="flex h-touch w-touch items-center justify-center rounded-md border border-border" aria-label="Próximo dia" @click="shift(1)">›</button>
-        <BaseButton class="ml-2" @click="abrirCriar">Novo</BaseButton>
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Navegação de data: controle segmentado (‹ Hoje ›). Ícones SVG
+             nítidos, divisórias sutis, hover/foco claros e alvo de toque 44px.
+             O "Hoje" fica sempre visível: vira estado ATIVO (accent) quando já
+             é hoje, evitando que o grupo "pule" ao trocar de dia. -->
+        <div class="inline-flex items-center overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+          <button
+            class="flex h-touch w-11 items-center justify-center text-text-muted transition-colors duration-fast hover:bg-surface-2 hover:text-text focus-visible:bg-surface-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-30"
+            :disabled="!canGoBack"
+            aria-label="Dia anterior"
+            @click="shift(-1)"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+          </button>
+          <button
+            class="h-touch border-x border-border px-4 text-small font-semibold transition-colors duration-fast focus-visible:outline-none"
+            :class="isToday ? 'cursor-default bg-accent-soft text-accent' : 'text-text hover:bg-surface-2 focus-visible:bg-surface-2'"
+            :disabled="isToday"
+            :aria-current="isToday ? 'date' : undefined"
+            @click="date = new Date()"
+          >Hoje</button>
+          <button
+            class="flex h-touch w-11 items-center justify-center text-text-muted transition-colors duration-fast hover:bg-surface-2 hover:text-text focus-visible:bg-surface-2 focus-visible:outline-none"
+            aria-label="Próximo dia"
+            @click="shift(1)"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+          </button>
+        </div>
+        <BaseButton @click="abrirCriar">Novo</BaseButton>
       </div>
     </header>
 
