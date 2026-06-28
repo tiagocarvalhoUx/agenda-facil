@@ -62,6 +62,12 @@ const router = createRouter({
           component: () => import('@/views/app/DashboardView.vue'),
           meta: { ownerOnly: true },
         },
+        {
+          path: 'financeiro',
+          name: 'financeiro',
+          component: () => import('@/views/app/FinanceiroView.vue'),
+          meta: { ownerOnly: true },
+        },
         { path: 'clientes', name: 'clientes', component: () => import('@/views/app/ClientesView.vue') },
         { path: 'bloqueios', name: 'bloqueios', component: () => import('@/views/app/BloqueiosView.vue') },
         {

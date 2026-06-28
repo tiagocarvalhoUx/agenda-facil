@@ -8,6 +8,7 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import {
   Calendar,
   LayoutDashboard,
+  Wallet,
   Users,
   Palmtree,
   Scissors,
@@ -64,6 +65,7 @@ interface NavItem {
 const allItems: NavItem[] = [
   { name: 'agenda', label: 'Agenda', short: 'Agenda', icon: Calendar },
   { name: 'dashboard', label: 'Dashboard', short: 'Painel', icon: LayoutDashboard, ownerOnly: true },
+  { name: 'financeiro', label: 'Financeiro', short: 'Financeiro', icon: Wallet, ownerOnly: true },
   { name: 'clientes', label: 'Clientes', short: 'Clientes', icon: Users },
   { name: 'bloqueios', label: 'Bloqueios', short: 'Folgas', icon: Palmtree },
   { name: 'servicos', label: 'Serviços', short: 'Serviços', icon: Scissors, ownerOnly: true },

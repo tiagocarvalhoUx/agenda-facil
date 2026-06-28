@@ -94,7 +94,7 @@ function setDias(n: number) {
           <p class="tabular mt-3 text-display-lg font-display leading-none text-text">{{ data.agendamentos_hoje }}</p>
           <p class="mt-1.5 text-caption text-text-muted">agendamentos hoje</p>
         </RouterLink>
-        <RouterLink :to="{ name: 'servicos' }" :class="metricCard" aria-label="Ver serviços e preços">
+        <RouterLink :to="{ name: 'financeiro' }" :class="metricCard" aria-label="Abrir financeiro">
           <ArrowUpRight class="absolute right-4 top-4 h-4 w-4 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" :stroke-width="2" aria-hidden="true" />
           <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-success/15 text-success">
             <Wallet class="h-5 w-5" :stroke-width="2" />
