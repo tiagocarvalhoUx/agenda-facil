@@ -45,9 +45,11 @@ async function submit() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-bg px-4" :class="signup ? 'py-8' : 'flex items-center justify-center'">
+  <div class="relative min-h-screen overflow-hidden bg-bg px-4" :class="signup ? 'py-8' : 'flex items-center justify-center'">
+    <!-- halo decorativo do accent -->
+    <div class="pointer-events-none absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 -translate-y-1/3 rounded-full bg-accent opacity-[0.12] blur-[120px]" aria-hidden="true" />
     <div
-      class="mx-auto w-full overflow-hidden rounded-lg border border-border bg-surface p-6 shadow-sm"
+      class="anim-fade-up relative mx-auto w-full overflow-hidden rounded-2xl border border-border bg-surface p-6 shadow-pop"
       :class="signup ? 'max-w-md' : 'max-w-sm'"
     >
       <!-- Hero (só na landing de aquisição): mostra o produto ANTES do CTA,

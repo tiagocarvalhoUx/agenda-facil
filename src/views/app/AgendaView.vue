@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch, inject } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
@@ -11,6 +11,10 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
+import { Menu, ChevronLeft, ChevronRight, Plus } from '@lucide/vue'
+
+// Abre o drawer lateral (provido pelo AppLayout) a partir do hambúrguer do hero.
+const openDrawer = inject<() => void>('openDrawer', () => {})
 
 // Agenda (ADENDO §15.2/§15.3/§16.2). É a home do painel. Abre no dia de hoje.
 // "Trilho de horário vivo" (§13.5) marca o agora e desliza durante o dia.
@@ -43,6 +47,23 @@ const canGoBack = computed(() => {
   return d > today
 })
 const isToday = computed(() => date.value.toDateString() === new Date().toDateString())
+
+// Saudação por período do dia (apresentação — sem dados novos). Hora no fuso BR.
+const greeting = computed(() => {
+  const h = Number(
+    new Intl.DateTimeFormat('pt-BR', { hour: 'numeric', hour12: false, timeZone: 'America/Sao_Paulo' }).format(new Date()),
+  )
+  if (h < 12) return 'Bom dia'
+  if (h < 18) return 'Boa tarde'
+  return 'Boa noite'
+})
+// Resumo do dia derivado do que já carregamos (contagem de agendamentos).
+const resumo = computed(() => {
+  const n = rows.value.length
+  const quando = isToday.value ? 'hoje' : 'neste dia'
+  if (n === 0) return isToday.value ? 'Nenhum agendamento por enquanto.' : 'Nenhum agendamento neste dia.'
+  return `Você tem ${n} agendamento${n > 1 ? 's' : ''} ${quando}.`
+})
 
 async function load() {
   loading.value = true
@@ -224,41 +245,54 @@ async function criar() {
 
 <template>
   <div class="mx-auto max-w-3xl p-4 sm:p-5">
-    <header class="mb-5 flex items-center justify-between gap-3">
-      <div>
-        <p class="eyebrow">Agenda</p>
-        <h1 class="text-h1 font-display capitalize text-text">{{ formatDataLonga(date) }}</h1>
+    <!-- Top bar: hambúrguer (mobile) + título + Novo (desktop) -->
+    <div class="mb-4 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <button
+          class="-ml-1 flex h-11 w-11 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-2 hover:text-text lg:hidden"
+          aria-label="Abrir menu"
+          @click="openDrawer"
+        >
+          <Menu class="h-6 w-6" :stroke-width="2.1" />
+        </button>
+        <h1 class="text-h2 font-display text-text">Agenda</h1>
       </div>
-      <div class="flex items-center gap-2 sm:gap-3">
-        <!-- Navegação de data: controle segmentado (‹ Hoje ›). Ícones SVG
-             nítidos, divisórias sutis, hover/foco claros e alvo de toque 44px.
-             O "Hoje" fica sempre visível: vira estado ATIVO (accent) quando já
-             é hoje, evitando que o grupo "pule" ao trocar de dia. -->
-        <div class="inline-flex items-center overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
-          <button
-            class="flex h-touch w-11 items-center justify-center text-text-muted transition-colors duration-fast hover:bg-surface-2 hover:text-text focus-visible:bg-surface-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-30"
-            :disabled="!canGoBack"
-            aria-label="Dia anterior"
-            @click="shift(-1)"
-          >
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
-          </button>
-          <button
-            class="h-touch border-x border-border px-4 text-small font-semibold transition-colors duration-fast focus-visible:outline-none"
-            :class="isToday ? 'cursor-default bg-accent-soft text-accent' : 'text-text hover:bg-surface-2 focus-visible:bg-surface-2'"
-            :disabled="isToday"
-            :aria-current="isToday ? 'date' : undefined"
-            @click="date = new Date()"
-          >Hoje</button>
-          <button
-            class="flex h-touch w-11 items-center justify-center text-text-muted transition-colors duration-fast hover:bg-surface-2 hover:text-text focus-visible:bg-surface-2 focus-visible:outline-none"
-            aria-label="Próximo dia"
-            @click="shift(1)"
-          >
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
-          </button>
-        </div>
-        <BaseButton @click="abrirCriar">Novo</BaseButton>
+      <BaseButton class="hidden lg:inline-flex" @click="abrirCriar">
+        <Plus class="h-5 w-5" :stroke-width="2.25" /> Novo
+      </BaseButton>
+    </div>
+
+    <!-- Hero: saudação + data + resumo do dia (anim de entrada) -->
+    <header class="anim-fade-up mb-5">
+      <p class="text-small text-text-muted">{{ greeting }} 👋</p>
+      <h2 class="mt-0.5 text-display-lg font-display text-text first-letter:uppercase">{{ formatDataLonga(date) }}</h2>
+      <p class="mt-1 text-small text-text-muted">{{ resumo }}</p>
+
+      <!-- Navegação de data: controle segmentado (‹ Hoje ›). O "Hoje" fica
+           sempre visível: vira estado ATIVO (accent) quando já é hoje. -->
+      <div class="mt-4 inline-flex items-center gap-1 rounded-pill border border-border bg-surface/70 p-1 shadow-card backdrop-blur-sm">
+        <button
+          class="flex h-10 w-10 items-center justify-center rounded-pill text-text-muted transition-colors duration-fast hover:bg-surface-2 hover:text-text focus-visible:outline-none disabled:pointer-events-none disabled:opacity-30"
+          :disabled="!canGoBack"
+          aria-label="Dia anterior"
+          @click="shift(-1)"
+        >
+          <ChevronLeft class="h-5 w-5" :stroke-width="2.25" />
+        </button>
+        <button
+          class="h-10 rounded-pill px-5 text-small font-semibold transition-colors duration-fast focus-visible:outline-none"
+          :class="isToday ? 'cursor-default bg-accent text-on-accent shadow-glow' : 'text-text hover:bg-surface-2'"
+          :disabled="isToday"
+          :aria-current="isToday ? 'date' : undefined"
+          @click="date = new Date()"
+        >Hoje</button>
+        <button
+          class="flex h-10 w-10 items-center justify-center rounded-pill text-text-muted transition-colors duration-fast hover:bg-surface-2 hover:text-text focus-visible:outline-none"
+          aria-label="Próximo dia"
+          @click="shift(1)"
+        >
+          <ChevronRight class="h-5 w-5" :stroke-width="2.25" />
+        </button>
       </div>
     </header>
 
@@ -287,7 +321,7 @@ async function criar() {
     />
 
     <!-- lista do dia com trilho do agora (inserido na posição cronológica) -->
-    <div v-else class="flex flex-col gap-2">
+    <div v-else class="stagger flex flex-col gap-3">
       <template v-for="(r, i) in rows" :key="r.id">
         <div
           v-if="railVisible && i === nowIndex"
@@ -320,12 +354,22 @@ async function criar() {
       </div>
     </div>
 
+    <!-- FAB flutuante (mobile): cria agendamento. Fica acima da bottom nav. -->
+    <button
+      class="anim-scale-in fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-pill bg-accent text-on-accent shadow-glow transition-transform duration-base ease-standard hover:bg-accent-hover active:scale-95 lg:hidden"
+      aria-label="Novo agendamento"
+      @click="abrirCriar"
+    >
+      <Plus class="h-6 w-6" :stroke-width="2.5" />
+    </button>
+
     <!-- bottom sheet de ações -->
     <Teleport to="body">
-      <div v-if="selected" class="theme-admin fixed inset-0 z-50 flex items-end justify-center bg-black/30 sm:items-center" @click.self="selected = null">
-        <div class="w-full max-w-sm rounded-t-lg bg-surface p-5 shadow-lg sm:rounded-lg">
+      <div v-if="selected" class="theme-admin fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-4" @click.self="selected = null">
+        <div class="anim-sheet-up w-full max-w-sm rounded-t-2xl border border-border bg-surface p-5 shadow-pop sm:rounded-2xl">
+          <div class="mx-auto mb-4 h-1 w-10 rounded-pill bg-border sm:hidden" aria-hidden="true" />
           <div class="mb-4">
-            <p class="tabular text-h3 font-semibold text-text">{{ formatHora(selected.inicio_at) }}–{{ formatHora(selected.fim_at) }}</p>
+            <p class="tabular text-h2 font-semibold text-text">{{ formatHora(selected.inicio_at) }}–{{ formatHora(selected.fim_at) }}</p>
             <p class="text-small text-text-muted">{{ selected.service?.nome }} · {{ selected.customer?.nome }}</p>
           </div>
           <div class="flex flex-col gap-2">
@@ -344,8 +388,9 @@ async function criar() {
 
     <!-- Quick-create -->
     <Teleport to="body">
-      <div v-if="showCreate" class="theme-admin fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/30 sm:items-center" @click.self="showCreate = false">
-        <div class="my-4 w-full max-w-sm rounded-t-lg bg-surface p-5 shadow-lg sm:rounded-lg">
+      <div v-if="showCreate" class="theme-admin fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/50 backdrop-blur-sm sm:items-center sm:p-4" @click.self="showCreate = false">
+        <div class="anim-sheet-up w-full max-w-sm rounded-t-2xl border border-border bg-surface p-5 shadow-pop sm:my-4 sm:rounded-2xl">
+          <div class="mx-auto mb-4 h-1 w-10 rounded-pill bg-border sm:hidden" aria-hidden="true" />
           <h2 class="mb-4 text-h2 font-display text-text">Novo agendamento</h2>
           <div v-if="services.length === 0 || professionals.length === 0" class="text-small text-text-muted">
             Cadastre ao menos um serviço e um profissional primeiro.

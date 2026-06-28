@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import PageHeader from '@/components/app/PageHeader.vue'
+import { MessageCircle, Clock3 } from '@lucide/vue'
 
 // Canal de suporte do SaaS (dúvidas, problemas, reclamações). O contato é o
 // WhatsApp do responsável pelo Agenda Fácil — atende donos e equipe.
@@ -20,41 +22,43 @@ const whatsLink = computed(() => {
 
 <template>
   <div class="mx-auto max-w-2xl p-4 sm:p-5">
-    <header class="mb-5">
-      <p class="eyebrow">Ajuda</p>
-      <h1 class="text-h1 font-display text-text">Suporte</h1>
-      <p class="mt-1 text-small text-text-muted">
-        Dúvidas, problemas ou sugestões? Fale com a gente — respondemos pelo WhatsApp.
-      </p>
-    </header>
+    <PageHeader
+      eyebrow="Ajuda"
+      title="Suporte"
+      subtitle="Dúvidas, problemas ou sugestões? Fale com a gente — respondemos pelo WhatsApp."
+    />
 
     <!-- Card de contato principal (WhatsApp) -->
-    <div class="rounded-lg border border-border bg-surface p-5 shadow-sm">
-      <div class="flex items-start gap-3">
-        <span class="text-2xl" aria-hidden="true">💬</span>
+    <div class="anim-fade-up rounded-2xl border border-border bg-surface p-6 shadow-card">
+      <div class="flex items-start gap-4">
+        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-success/15 text-success" aria-hidden="true">
+          <MessageCircle class="h-6 w-6" :stroke-width="2" />
+        </span>
         <div class="flex-1">
           <p class="text-body font-semibold text-text">Atendimento por WhatsApp</p>
           <p class="mt-0.5 text-small text-text-muted">
             Tire dúvidas sobre o uso, relate um problema ou registre uma reclamação.
           </p>
-          <p class="mt-3 text-h3 font-display text-text">{{ WHATS_DISPLAY }}</p>
+          <p class="mt-3 text-h2 font-display text-text">{{ WHATS_DISPLAY }}</p>
           <p class="mt-1 flex items-center gap-1.5 text-small text-text-muted">
-            <span aria-hidden="true">🕒</span> Atendimento: <strong class="text-text">Seg–Sex, 9h–18h</strong>
+            <Clock3 class="h-4 w-4" :stroke-width="2" aria-hidden="true" /> Atendimento: <strong class="text-text">Seg–Sex, 9h–18h</strong>
           </p>
         </div>
       </div>
-      <a :href="whatsLink" target="_blank" rel="noopener" class="mt-4 block">
-        <BaseButton block>Falar no WhatsApp</BaseButton>
+      <a :href="whatsLink" target="_blank" rel="noopener" class="mt-5 block">
+        <BaseButton block>
+          <MessageCircle class="h-5 w-5" :stroke-width="2" /> Falar no WhatsApp
+        </BaseButton>
       </a>
     </div>
 
     <!-- Dica para agilizar o atendimento -->
-    <div class="mt-4 rounded-lg border border-border bg-surface-2 p-4">
-      <p class="text-small font-medium text-text">Para agilizar o atendimento</p>
-      <ul class="mt-2 flex flex-col gap-1.5 text-small text-text-muted">
-        <li class="flex gap-2"><span aria-hidden="true">•</span> Descreva o que aconteceu e em qual tela.</li>
-        <li class="flex gap-2"><span aria-hidden="true">•</span> Se possível, envie um print do erro.</li>
-        <li class="flex gap-2"><span aria-hidden="true">•</span> Informe o nome do estabelecimento.</li>
+    <div class="mt-4 rounded-2xl border border-border bg-surface-2 p-5">
+      <p class="text-small font-semibold text-text">Para agilizar o atendimento</p>
+      <ul class="mt-3 flex flex-col gap-2 text-small text-text-muted">
+        <li class="flex gap-2"><span class="text-accent" aria-hidden="true">•</span> Descreva o que aconteceu e em qual tela.</li>
+        <li class="flex gap-2"><span class="text-accent" aria-hidden="true">•</span> Se possível, envie um print do erro.</li>
+        <li class="flex gap-2"><span class="text-accent" aria-hidden="true">•</span> Informe o nome do estabelecimento.</li>
       </ul>
     </div>
   </div>

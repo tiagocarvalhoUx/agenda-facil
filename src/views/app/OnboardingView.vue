@@ -149,7 +149,7 @@ async function copiarLink() {
         <div class="flex flex-col gap-1">
           <label class="text-small font-medium text-text">Cor de destaque</label>
           <div class="flex items-center gap-3">
-            <input v-model="marca.accent_color" type="color" class="h-10 w-14 cursor-pointer rounded-md border border-border" aria-label="Selecionar cor" />
+            <input v-model="marca.accent_color" type="color" class="h-10 w-14 cursor-pointer rounded-lg border border-border" aria-label="Selecionar cor" />
             <span class="tabular text-small text-text-muted">{{ marca.accent_color.toUpperCase() }}</span>
             <span class="ml-auto inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-caption" :class="contrasteOk ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'">
               {{ contrasteOk ? '✓ Contraste AA' : '⚠ Será escurecida' }}
@@ -203,7 +203,7 @@ async function copiarLink() {
           <h2 class="text-h1 font-display text-text">Tudo pronto!</h2>
           <p class="mt-1 text-body text-text-muted">Compartilhe seu link e comece a receber agendamentos.</p>
         </div>
-        <code class="block w-full truncate rounded-md bg-surface-2 p-3 text-small text-text">{{ publicUrl }}</code>
+        <code class="block w-full truncate rounded-lg bg-surface-2 p-3 text-small text-text">{{ publicUrl }}</code>
         <BaseButton block @click="copiarLink">Copiar link público</BaseButton>
         <BaseButton variant="secondary" block @click="concluir">Ir para a agenda</BaseButton>
       </section>

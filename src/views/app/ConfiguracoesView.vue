@@ -9,6 +9,8 @@ import { fetchBilling, subscribe, type TenantBilling } from '@/lib/billing'
 import { formatPreco } from '@/lib/format'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import PageHeader from '@/components/app/PageHeader.vue'
+import { Palette, Bell, CalendarClock, CreditCard, Link2 } from '@lucide/vue'
 
 // Configurações (dono): marca + cor de acento com VALIDAÇÃO DE CONTRASTE AA
 // ao salvar (§18). Pré-visualiza ao vivo aplicando o accent.
@@ -149,27 +151,27 @@ async function salvar() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-xl p-4 sm:p-5">
-    <header class="mb-5">
-      <p class="eyebrow">Ajustes</p>
-      <h1 class="text-h1 font-display text-text">Configurações</h1>
-    </header>
+  <div class="mx-auto max-w-2xl p-4 sm:p-5">
+    <PageHeader eyebrow="Ajustes" title="Configurações" />
 
-    <div class="flex flex-col gap-5">
-      <section class="rounded-lg border border-border bg-surface p-5">
-        <h2 class="mb-3 text-h2 font-display text-text">Marca</h2>
+    <div class="flex flex-col gap-4">
+      <section class="rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-6">
+        <h2 class="mb-4 flex items-center gap-2.5 text-h2 font-display text-text">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-soft text-accent"><Palette class="h-5 w-5" :stroke-width="2" /></span>
+          Marca
+        </h2>
         <div class="flex flex-col gap-4">
           <BaseInput v-model="form.nome" label="Nome do estabelecimento" required />
           <BaseInput v-model="form.brand_logo_url" label="URL do logo (opcional)" placeholder="https://..." />
           <div v-if="form.brand_logo_url" class="flex items-center gap-3">
-            <img :src="form.brand_logo_url" alt="Pré-visualização do logo" class="h-12 w-12 rounded-md object-contain bg-surface-2 p-1" />
+            <img :src="form.brand_logo_url" alt="Pré-visualização do logo" class="h-12 w-12 rounded-lg object-contain bg-surface-2 p-1" />
             <span class="text-small text-text-muted">Pré-visualização</span>
           </div>
 
           <div class="flex flex-col gap-1">
             <label class="text-small font-medium text-text">Cor de destaque</label>
             <div class="flex items-center gap-3">
-              <input v-model="form.accent_color" type="color" class="h-10 w-14 cursor-pointer rounded-md border border-border" aria-label="Selecionar cor" />
+              <input v-model="form.accent_color" type="color" class="h-10 w-14 cursor-pointer rounded-lg border border-border" aria-label="Selecionar cor" />
               <span class="tabular text-small text-text-muted">{{ form.accent_color.toUpperCase() }}</span>
               <span class="ml-auto inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-caption" :class="contrasteOk ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'">
                 {{ contrasteOk ? '✓ Contraste AA' : '⚠ Será escurecida' }}
@@ -184,14 +186,17 @@ async function salvar() {
         </div>
       </section>
 
-      <section class="rounded-lg border border-border bg-surface p-5">
-        <h2 class="mb-1 text-h2 font-display text-text">Notificações</h2>
+      <section class="rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-6">
+        <h2 class="mb-1 flex items-center gap-2.5 text-h2 font-display text-text">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-soft text-accent"><Bell class="h-5 w-5" :stroke-width="2" /></span>
+          Notificações
+        </h2>
         <p class="mb-4 text-small text-text-muted">
           Receba um aviso no celular ou computador assim que um cliente agendar pelo seu link — mesmo com o app fechado.
         </p>
 
         <template v-if="pushSupported">
-          <div class="flex items-center justify-between gap-3 rounded-md bg-surface-2 p-3">
+          <div class="flex items-center justify-between gap-3 rounded-lg bg-surface-2 p-3">
             <div>
               <p class="text-small font-medium text-text">Avisos neste dispositivo</p>
               <p class="text-caption text-text-muted">
@@ -207,14 +212,17 @@ async function salvar() {
           </p>
         </template>
 
-        <p v-else class="rounded-md bg-warning/10 p-3 text-small text-text-muted">
+        <p v-else class="rounded-lg bg-warning/10 p-3 text-small text-text-muted">
           Este navegador não suporta notificações push. No iPhone, toque em
           <strong class="text-text">Compartilhar → Adicionar à Tela de Início</strong> e abra por lá para habilitar.
         </p>
       </section>
 
-      <section class="rounded-lg border border-border bg-surface p-5">
-        <h2 class="mb-3 text-h2 font-display text-text">Política de agendamento</h2>
+      <section class="rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-6">
+        <h2 class="mb-4 flex items-center gap-2.5 text-h2 font-display text-text">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-soft text-accent"><CalendarClock class="h-5 w-5" :stroke-width="2" /></span>
+          Política de agendamento
+        </h2>
         <div class="flex flex-col gap-4">
           <label class="flex items-center gap-2 text-small text-text">
             <input v-model="form.auto_confirmar" type="checkbox" class="h-4 w-4 rounded border-border" />
@@ -229,8 +237,11 @@ async function salvar() {
         </div>
       </section>
 
-      <section class="rounded-lg border border-border bg-surface p-5">
-        <h2 class="mb-1 text-h2 font-display text-text">Assinatura</h2>
+      <section class="rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-6">
+        <h2 class="mb-1 flex items-center gap-2.5 text-h2 font-display text-text">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-soft text-accent"><CreditCard class="h-5 w-5" :stroke-width="2" /></span>
+          Assinatura
+        </h2>
         <p class="mb-4 text-small text-text-muted">
           Plano Mensal —
           <RouterLink
@@ -246,7 +257,7 @@ async function salvar() {
           <RouterLink
             v-if="billing && ['ativo', 'trial'].includes(billing.status)"
             :to="{ name: 'assinatura' }"
-            class="flex items-center justify-between gap-3 rounded-md border border-success/40 bg-success/10 p-3 transition-colors duration-fast hover:bg-success/20"
+            class="flex items-center justify-between gap-3 rounded-lg border border-success/40 bg-success/10 p-3 transition-colors duration-fast hover:bg-success/20"
           >
             <div>
               <p class="text-body font-semibold text-success">✓ Assinatura {{ STATUS_LABEL[billing.status] }}</p>
@@ -262,7 +273,7 @@ async function salvar() {
           </RouterLink>
 
           <!-- Atrasada -->
-          <div v-else-if="billing && billing.status === 'atrasado'" class="rounded-md border border-warning/40 bg-warning/10 p-3 text-small text-warning">
+          <div v-else-if="billing && billing.status === 'atrasado'" class="rounded-lg border border-warning/40 bg-warning/10 p-3 text-small text-warning">
             ⚠ Pagamento atrasado. Verifique a cobrança no e-mail/SMS do Asaas para reativar.
           </div>
 
@@ -274,13 +285,13 @@ async function salvar() {
               <div class="flex gap-2">
                 <button
                   type="button"
-                  class="min-h-touch flex-1 rounded-md border px-3 text-small transition-colors duration-fast"
+                  class="min-h-touch flex-1 rounded-lg border px-3 text-small transition-colors duration-fast"
                   :class="assina.billingType === 'PIX' ? 'border-accent bg-accent-soft text-text' : 'border-border text-text-muted'"
                   @click="assina.billingType = 'PIX'"
                 >Pix</button>
                 <button
                   type="button"
-                  class="min-h-touch flex-1 rounded-md border px-3 text-small transition-colors duration-fast"
+                  class="min-h-touch flex-1 rounded-lg border px-3 text-small transition-colors duration-fast"
                   :class="assina.billingType === 'CREDIT_CARD' ? 'border-accent bg-accent-soft text-text' : 'border-border text-text-muted'"
                   @click="assina.billingType = 'CREDIT_CARD'"
                 >Cartão</button>
@@ -292,10 +303,13 @@ async function salvar() {
         </template>
       </section>
 
-      <section class="rounded-lg border border-border bg-surface p-5">
-        <h2 class="mb-3 text-h2 font-display text-text">Página pública</h2>
+      <section class="rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-6">
+        <h2 class="mb-3 flex items-center gap-2.5 text-h2 font-display text-text">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-soft text-accent"><Link2 class="h-5 w-5" :stroke-width="2" /></span>
+          Página pública
+        </h2>
         <p class="mb-2 text-small text-text-muted">Compartilhe este link para receber agendamentos:</p>
-        <code class="block truncate rounded-md bg-surface-2 p-3 text-small text-text">{{ publicUrl }}</code>
+        <code class="block truncate rounded-lg bg-surface-2 p-3 text-small text-text">{{ publicUrl }}</code>
       </section>
     </div>
   </div>

@@ -7,6 +7,15 @@ import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import PageHeader from '@/components/app/PageHeader.vue'
+import { Search, ShieldCheck } from '@lucide/vue'
+
+// Iniciais do cliente para o avatar (até 2 letras).
+function iniciais(nome: string): string {
+  const p = nome.trim().split(/\s+/).filter(Boolean)
+  if (!p.length) return '—'
+  return (p[0][0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase()
+}
 
 // Clientes — visíveis só dentro do tenant (RLS). Inclui reputação anti no-show
 // (no_show_count), notas e tags editáveis, e ação LGPD de anonimização (§20).
@@ -71,18 +80,23 @@ async function anonimizar(c: Customer) {
 </script>
 
 <template>
-  <div class="mx-auto max-w-2xl p-4 sm:p-5">
-    <header class="mb-4">
-      <p class="eyebrow">Base</p>
-      <h1 class="text-h1 font-display text-text">Clientes</h1>
-    </header>
+  <div class="mx-auto max-w-4xl p-4 sm:p-5">
+    <PageHeader eyebrow="Base" title="Clientes" />
 
-    <div class="mb-4">
-      <BaseInput v-model="busca" label="Buscar" placeholder="Nome ou telefone" />
+    <!-- Busca com ícone (estilo filled premium) -->
+    <div class="relative mb-4 max-w-md">
+      <Search class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-text-muted" :stroke-width="2" aria-hidden="true" />
+      <input
+        v-model="busca"
+        type="search"
+        placeholder="Buscar por nome ou telefone"
+        aria-label="Buscar cliente"
+        class="h-12 w-full rounded-lg border border-border bg-surface pl-11 pr-4 text-body text-text placeholder:text-text-muted transition-colors focus:border-accent focus:outline-none"
+      />
     </div>
 
-    <div v-if="loading" class="flex flex-col gap-2">
-      <BaseSkeleton v-for="n in 4" :key="n" height="56px" />
+    <div v-if="loading" class="grid gap-3 sm:grid-cols-2">
+      <BaseSkeleton v-for="n in 4" :key="n" height="84px" rounded="xl" />
     </div>
     <EmptyState
       v-else-if="list.length === 0"
@@ -90,38 +104,51 @@ async function anonimizar(c: Customer) {
       title="Nenhum cliente ainda"
       description="Clientes aparecem aqui conforme os agendamentos chegam."
     />
-    <ul v-else class="flex flex-col gap-2">
+    <EmptyState
+      v-else-if="filtrados.length === 0"
+      icon="🔍"
+      title="Nenhum resultado"
+      description="Tente outro nome ou telefone."
+    />
+    <ul v-else class="stagger grid gap-3 sm:grid-cols-2">
       <li
         v-for="c in filtrados"
         :key="c.id"
-        class="flex cursor-pointer items-center justify-between rounded-md border border-border bg-surface p-4 hover:border-accent"
+        class="group flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-card transition-all duration-base ease-standard hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--accent)_30%,var(--border))] hover:shadow-float"
         @click="abrirFicha(c)"
       >
-        <div>
+        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent-soft text-small font-semibold text-text ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_35%,transparent)]" aria-hidden="true">{{ iniciais(c.nome) }}</span>
+        <div class="min-w-0 flex-1">
           <p class="flex items-center gap-2 text-body font-semibold text-text">
-            {{ c.nome }}
+            <span class="truncate">{{ c.nome }}</span>
             <!-- Reputação: destaca cliente reincidente (§6.3) -->
             <span
               v-if="c.no_show_count > 0"
-              class="rounded-pill bg-warning/15 px-2 py-0.5 text-caption font-medium text-warning"
+              class="shrink-0 rounded-pill bg-warning/15 px-2 py-0.5 text-caption font-medium text-warning"
               :title="`${c.no_show_count} falta(s) registrada(s)`"
-            >⚠ {{ c.no_show_count }} no-show</span>
+            >⚠ {{ c.no_show_count }}</span>
           </p>
-          <p class="tabular text-small text-text-muted">{{ c.telefone }}<template v-if="c.email"> · {{ c.email }}</template></p>
-          <div v-if="c.tags && c.tags.length" class="mt-1 flex flex-wrap gap-1">
+          <p class="tabular truncate text-small text-text-muted">{{ c.telefone }}<template v-if="c.email"> · {{ c.email }}</template></p>
+          <div v-if="c.tags && c.tags.length" class="mt-1.5 flex flex-wrap gap-1">
             <span v-for="t in c.tags" :key="t" class="rounded-pill bg-surface-2 px-2 py-0.5 text-caption text-text-muted">{{ t }}</span>
           </div>
         </div>
-        <span v-if="c.anonimizado_at" class="text-caption text-text-muted">Anonimizado</span>
+        <span v-if="c.anonimizado_at" class="shrink-0 text-caption text-text-muted">Anonimizado</span>
       </li>
     </ul>
 
     <!-- Ficha / drawer do cliente -->
     <Teleport to="body">
-      <div v-if="drawer" class="theme-admin fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/30 sm:items-center" @click.self="drawer = null">
-        <div class="my-4 w-full max-w-sm rounded-t-lg bg-surface p-5 shadow-lg sm:rounded-lg">
-          <h2 class="text-h2 font-display text-text">{{ drawer.nome }}</h2>
-          <p class="tabular mb-4 text-small text-text-muted">{{ drawer.telefone }}<template v-if="drawer.email"> · {{ drawer.email }}</template></p>
+      <div v-if="drawer" class="theme-admin fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/50 backdrop-blur-sm sm:items-center sm:p-4" @click.self="drawer = null">
+        <div class="anim-sheet-up w-full max-w-sm rounded-t-2xl border border-border bg-surface p-5 shadow-pop sm:my-4 sm:rounded-2xl">
+          <div class="mx-auto mb-4 h-1 w-10 rounded-pill bg-border sm:hidden" aria-hidden="true" />
+          <div class="mb-4 flex items-center gap-3">
+            <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-soft text-body font-semibold text-text ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_35%,transparent)]" aria-hidden="true">{{ iniciais(drawer.nome) }}</span>
+            <div class="min-w-0">
+              <h2 class="truncate text-h2 font-display text-text">{{ drawer.nome }}</h2>
+              <p class="tabular truncate text-small text-text-muted">{{ drawer.telefone }}<template v-if="drawer.email"> · {{ drawer.email }}</template></p>
+            </div>
+          </div>
 
           <div class="flex flex-col gap-3">
             <div class="flex flex-col gap-1">
@@ -129,18 +156,20 @@ async function anonimizar(c: Customer) {
               <textarea
                 v-model="editForm.notas"
                 rows="3"
-                class="rounded-md border border-border bg-surface px-3 py-2 text-body text-text focus:border-accent focus:outline-none"
+                class="rounded-lg border border-border bg-surface px-3 py-2 text-body text-text focus:border-accent focus:outline-none"
                 placeholder="Preferências, observações..."
               />
             </div>
             <BaseInput v-model="editForm.tagsRaw" label="Tags (separadas por vírgula)" placeholder="VIP, alérgico, fidelidade" />
 
-            <p v-if="drawer.no_show_count > 0" class="rounded-md bg-warning/10 p-2 text-small text-warning">
+            <p v-if="drawer.no_show_count > 0" class="rounded-lg bg-warning/10 p-3 text-small text-warning">
               ⚠ Este cliente tem {{ drawer.no_show_count }} falta(s) registrada(s).
             </p>
 
             <BaseButton :loading="savingFicha" block @click="salvarFicha">Salvar ficha</BaseButton>
-            <BaseButton v-if="!drawer.anonimizado_at" variant="danger" block @click="anonimizar(drawer)">Anonimizar (LGPD)</BaseButton>
+            <BaseButton v-if="!drawer.anonimizado_at" variant="danger" block @click="anonimizar(drawer)">
+              <ShieldCheck class="h-5 w-5" :stroke-width="2" /> Anonimizar (LGPD)
+            </BaseButton>
             <BaseButton variant="ghost" block @click="drawer = null">Fechar</BaseButton>
           </div>
         </div>

@@ -19,11 +19,11 @@ const isDisabled = computed(() => props.disabled || props.loading)
 
 const variants: Record<string, string> = {
   primary:
-    'bg-accent text-on-accent hover:bg-accent-hover active:scale-[0.99] disabled:opacity-50',
+    'bg-accent text-on-accent shadow-glow hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 disabled:shadow-none',
   secondary:
-    'border border-border bg-surface text-text hover:bg-surface-2 disabled:opacity-50',
-  ghost: 'text-text hover:bg-surface-2 disabled:opacity-50',
-  danger: 'bg-danger text-on-accent hover:opacity-90 disabled:opacity-50',
+    'border border-border bg-surface text-text hover:bg-surface-2 active:scale-[0.98] disabled:opacity-50',
+  ghost: 'text-text hover:bg-surface-2 active:scale-[0.98] disabled:opacity-50',
+  danger: 'bg-danger text-white hover:opacity-90 active:scale-[0.98] disabled:opacity-50',
 }
 </script>
 
@@ -32,7 +32,7 @@ const variants: Record<string, string> = {
     :type="type"
     :disabled="isDisabled"
     :aria-busy="loading"
-    class="inline-flex min-h-touch items-center justify-center gap-2 rounded-md px-5 py-2 text-body font-semibold transition-[background,transform] duration-fast ease-standard disabled:cursor-not-allowed"
+    class="inline-flex min-h-touch items-center justify-center gap-2 rounded-lg px-5 py-2 text-body font-semibold transition-[background,transform,box-shadow] duration-fast ease-standard disabled:cursor-not-allowed"
     :class="[variants[variant], block ? 'w-full' : '']"
   >
     <svg

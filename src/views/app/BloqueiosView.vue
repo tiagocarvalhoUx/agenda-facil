@@ -9,6 +9,9 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import PageHeader from '@/components/app/PageHeader.vue'
+import PageFab from '@/components/app/PageFab.vue'
+import { Plus, Trash2, Palmtree } from '@lucide/vue'
 
 // Bloqueios/folgas/feriados (§6.2 / time_blocks). Faixas indisponíveis
 // subtraídas dos slots públicos e desenhadas na agenda. RLS: owner gerencia o
@@ -87,17 +90,17 @@ async function remover(b: BlockRow) {
 </script>
 
 <template>
-  <div class="mx-auto max-w-2xl p-4 sm:p-5">
-    <header class="mb-5 flex items-center justify-between">
-      <div>
-        <p class="eyebrow">Disponibilidade</p>
-        <h1 class="text-h1 font-display text-text">Bloqueios e folgas</h1>
-      </div>
-      <BaseButton :disabled="profs.length === 0" @click="novo">Novo bloqueio</BaseButton>
-    </header>
+  <div class="mx-auto max-w-4xl p-4 sm:p-5">
+    <PageHeader eyebrow="Disponibilidade" title="Bloqueios e folgas">
+      <template #actions>
+        <BaseButton class="hidden lg:inline-flex" :disabled="profs.length === 0" @click="novo">
+          <Plus class="h-5 w-5" :stroke-width="2.25" /> Novo bloqueio
+        </BaseButton>
+      </template>
+    </PageHeader>
 
-    <div v-if="loading" class="flex flex-col gap-2">
-      <BaseSkeleton v-for="n in 3" :key="n" height="64px" />
+    <div v-if="loading" class="grid gap-3 sm:grid-cols-2">
+      <BaseSkeleton v-for="n in 3" :key="n" height="92px" rounded="xl" />
     </div>
 
     <EmptyState
@@ -116,27 +119,35 @@ async function remover(b: BlockRow) {
       @cta="novo"
     />
 
-    <ul v-else class="flex flex-col gap-2">
-      <li v-for="b in list" :key="b.id" class="flex items-center justify-between gap-3 rounded-md border border-border bg-surface p-4">
-        <div>
-          <p class="text-body font-semibold text-text">{{ b.professional?.nome ?? '—' }}</p>
-          <p class="tabular text-small text-text-muted capitalize">
+    <ul v-else class="stagger grid gap-3 sm:grid-cols-2">
+      <li v-for="b in list" :key="b.id" class="flex items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-card">
+        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-warning/15 text-warning" aria-hidden="true">
+          <Palmtree class="h-5 w-5" :stroke-width="2" />
+        </span>
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-body font-semibold text-text">{{ b.professional?.nome ?? '—' }}</p>
+          <p class="tabular text-small text-text-muted first-letter:uppercase">
             {{ formatDataLonga(b.inicio_at) }} · {{ formatHora(b.inicio_at) }}–{{ formatHora(b.fim_at) }}
           </p>
-          <p v-if="b.motivo" class="text-small text-text-muted">{{ b.motivo }}</p>
+          <p v-if="b.motivo" class="truncate text-small text-text-muted">{{ b.motivo }}</p>
         </div>
-        <button class="text-small text-danger underline" @click="remover(b)">Remover</button>
+        <button class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-danger transition-colors hover:bg-danger/10" aria-label="Remover" @click="remover(b)">
+          <Trash2 class="h-4 w-4" :stroke-width="2" />
+        </button>
       </li>
     </ul>
 
+    <PageFab v-if="profs.length > 0" label="Novo bloqueio" @click="novo" />
+
     <Teleport to="body">
-      <div v-if="showForm" class="theme-admin fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/30 sm:items-center" @click.self="showForm = false">
-        <div class="my-4 w-full max-w-sm rounded-t-lg bg-surface p-5 shadow-lg sm:rounded-lg">
+      <div v-if="showForm" class="theme-admin fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/50 backdrop-blur-sm sm:items-center sm:p-4" @click.self="showForm = false">
+        <div class="anim-sheet-up w-full max-w-sm rounded-t-2xl border border-border bg-surface p-5 shadow-pop sm:my-4 sm:rounded-2xl">
+          <div class="mx-auto mb-4 h-1 w-10 rounded-pill bg-border sm:hidden" aria-hidden="true" />
           <h2 class="mb-4 text-h2 font-display text-text">Novo bloqueio</h2>
           <div class="flex flex-col gap-3">
             <div class="flex flex-col gap-1">
               <label class="text-small font-medium text-text">Profissional</label>
-              <select v-model="form.professional_id" class="min-h-touch rounded-md border border-border bg-surface px-3 text-body text-text focus:border-accent focus:outline-none">
+              <select v-model="form.professional_id" class="min-h-touch rounded-lg border border-border bg-surface px-3 text-body text-text focus:border-accent focus:outline-none">
                 <option v-for="p in profs" :key="p.id" :value="p.id">{{ p.nome }}</option>
               </select>
             </div>

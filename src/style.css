@@ -60,25 +60,29 @@
    Aplicado também nos overlays via Teleport (que recebem a classe theme-admin).
    ========================================================================= */
 .theme-admin {
-  --bg: #0b1413;
-  --surface: #111d1b;
-  --surface-2: #182623;
-  --border: #26332f;
-  --text: #e9f1ef;
-  --text-muted: #94a4a0;
-  --ink: #0b1413;
+  /* Escala de elevação navy (mais escuro → mais claro): fundo · superfície
+     secundária · cards. Premium SaaS dark (Linear/Stripe/Vercel feel). */
+  --bg: #06080d;
+  --surface: #111827; /* cards */
+  --surface-2: #0d1220; /* superfície secundária / hover recuado */
+  --border: rgba(255, 255, 255, 0.06);
+  --text: #f4f6fb;
+  --text-muted: #9ca3af;
+  --ink: #06080d;
 
   /* destaque suave da marca, translúcido para ler bem sobre escuro */
-  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
+  --accent-ghost: color-mix(in srgb, var(--accent) 12%, transparent);
   --on-accent: #ffffff;
 
-  /* vidro da chrome (sidebar / headers / bottom bar) */
-  --glass: rgba(17, 29, 27, 0.72);
+  /* vidro da chrome (sidebar / headers / bottom bar / drawer) */
+  --glass: rgba(13, 18, 32, 0.72);
+  --glass-strong: rgba(9, 12, 22, 0.86);
 
   /* semânticas mais claras p/ legibilidade em fundo escuro */
-  --success: #34d399;
-  --warning: #fbbf24;
-  --danger: #f87171;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
   --info: #60a5fa;
 
   color-scheme: dark;
@@ -136,3 +140,49 @@
     color: var(--text-muted);
   }
 }
+
+/* =========================================================================
+   MICRO-INTERAÇÕES — redesign premium (mobile-first)
+   Animações curtas (150–300ms) com easing padrão. Todas respeitam
+   prefers-reduced-motion via a regra global em @layer base.
+   ========================================================================= */
+@keyframes ui-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes ui-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes ui-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes ui-slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@keyframes ui-sheet-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.anim-fade { animation: ui-fade var(--motion-base) var(--ease-standard) both; }
+.anim-fade-up { animation: ui-fade-up var(--motion-slow) var(--ease-standard) both; }
+.anim-scale-in { animation: ui-scale-in var(--motion-base) var(--ease-standard) both; }
+.anim-slide-in-left { animation: ui-slide-in-left var(--motion-slow) var(--ease-standard) both; }
+.anim-sheet-up { animation: ui-sheet-up var(--motion-slow) var(--ease-standard) both; }
+
+/* Entrada escalonada das listas (cards da agenda surgem em cascata) */
+.stagger > * { animation: ui-fade-up var(--motion-slow) var(--ease-standard) both; }
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 40ms; }
+.stagger > *:nth-child(3) { animation-delay: 80ms; }
+.stagger > *:nth-child(4) { animation-delay: 120ms; }
+.stagger > *:nth-child(5) { animation-delay: 160ms; }
+.stagger > *:nth-child(6) { animation-delay: 200ms; }
+.stagger > *:nth-child(n + 7) { animation-delay: 240ms; }
+
+/* Esconde a scrollbar mantendo o scroll (bottom nav / chips) */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

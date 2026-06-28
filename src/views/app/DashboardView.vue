@@ -5,6 +5,8 @@ import { useAuthStore } from '@/stores/auth'
 import { formatPreco } from '@/lib/format'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import PageHeader from '@/components/app/PageHeader.vue'
+import { CalendarDays, Wallet, UserX, CalendarRange } from '@lucide/vue'
 
 // Dashboard do dono (§6.6): métricas que orientam retenção. Agregação no
 // servidor via RPC SECURITY DEFINER (só owner). Nenhuma é vaidade.
@@ -47,25 +49,24 @@ function setDias(n: number) {
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl p-4 sm:p-5">
-    <header class="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <p class="eyebrow">Visão geral</p>
-        <h1 class="text-h1 font-display text-text">Dashboard</h1>
-      </div>
-      <div class="flex gap-1">
-        <button
-          v-for="n in [7, 30, 90]"
-          :key="n"
-          class="min-h-touch rounded-md border px-3 text-small"
-          :class="dias === n ? 'border-accent bg-accent-soft text-text' : 'border-border text-text-muted'"
-          @click="setDias(n)"
-        >{{ n }}d</button>
-      </div>
-    </header>
+  <div class="mx-auto max-w-5xl p-4 sm:p-5">
+    <PageHeader eyebrow="Visão geral" title="Dashboard">
+      <template #actions>
+        <!-- Período: controle segmentado em pílula -->
+        <div class="inline-flex items-center gap-1 rounded-pill border border-border bg-surface/70 p-1 shadow-card backdrop-blur-sm">
+          <button
+            v-for="n in [7, 30, 90]"
+            :key="n"
+            class="h-9 rounded-pill px-3.5 text-small font-semibold transition-colors duration-fast"
+            :class="dias === n ? 'bg-accent text-on-accent shadow-glow' : 'text-text-muted hover:text-text'"
+            @click="setDias(n)"
+          >{{ n }}d</button>
+        </div>
+      </template>
+    </PageHeader>
 
-    <div v-if="loading" class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <BaseSkeleton v-for="n in 4" :key="n" height="88px" rounded="lg" />
+    <div v-if="loading" class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <BaseSkeleton v-for="n in 4" :key="n" height="120px" rounded="xl" />
     </div>
 
     <EmptyState
@@ -79,58 +80,71 @@ function setDias(n: number) {
 
     <template v-else-if="data">
       <!-- Cartões de métrica -->
-      <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div class="rounded-lg border border-border bg-surface p-4">
-          <p class="text-caption text-text-muted">Hoje</p>
-          <p class="tabular text-h1 font-display text-text">{{ data.agendamentos_hoje }}</p>
-          <p class="text-caption text-text-muted">agendamentos</p>
+      <div class="stagger grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div class="rounded-xl border border-border bg-surface p-5 shadow-card">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-soft text-accent ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_30%,transparent)]">
+            <CalendarDays class="h-5 w-5" :stroke-width="2" />
+          </span>
+          <p class="tabular mt-3 text-display-lg font-display leading-none text-text">{{ data.agendamentos_hoje }}</p>
+          <p class="mt-1.5 text-caption text-text-muted">agendamentos hoje</p>
         </div>
-        <div class="rounded-lg border border-border bg-surface p-4">
-          <p class="text-caption text-text-muted">Faturamento*</p>
-          <p class="tabular text-h2 font-display text-text">{{ formatPreco(data.faturamento_estimado) }}</p>
-          <p class="text-caption text-text-muted">concluídos no período</p>
+        <div class="rounded-xl border border-border bg-surface p-5 shadow-card">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-success/15 text-success">
+            <Wallet class="h-5 w-5" :stroke-width="2" />
+          </span>
+          <p class="tabular mt-3 text-h1 font-display leading-tight text-text">{{ formatPreco(data.faturamento_estimado) }}</p>
+          <p class="mt-1.5 text-caption text-text-muted">faturamento* no período</p>
         </div>
-        <div class="rounded-lg border border-border bg-surface p-4">
-          <p class="text-caption text-text-muted">No-show</p>
-          <p class="tabular text-h1 font-display" :class="data.taxa_no_show > 0.15 ? 'text-warning' : 'text-text'">
+        <div class="rounded-xl border border-border bg-surface p-5 shadow-card">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg" :class="data.taxa_no_show > 0.15 ? 'bg-warning/15 text-warning' : 'bg-surface-2 text-text-muted'">
+            <UserX class="h-5 w-5" :stroke-width="2" />
+          </span>
+          <p class="tabular mt-3 text-display-lg font-display leading-none" :class="data.taxa_no_show > 0.15 ? 'text-warning' : 'text-text'">
             {{ (data.taxa_no_show * 100).toFixed(0) }}%
           </p>
-          <p class="text-caption text-text-muted">{{ data.no_show }} falta(s)</p>
+          <p class="mt-1.5 text-caption text-text-muted">no-show · {{ data.no_show }} falta(s)</p>
         </div>
-        <div class="rounded-lg border border-border bg-surface p-4">
-          <p class="text-caption text-text-muted">Período</p>
-          <p class="tabular text-h1 font-display text-text">{{ data.total_periodo }}</p>
-          <p class="text-caption text-text-muted">agendamentos</p>
+        <div class="rounded-xl border border-border bg-surface p-5 shadow-card">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-info/15 text-info">
+            <CalendarRange class="h-5 w-5" :stroke-width="2" />
+          </span>
+          <p class="tabular mt-3 text-display-lg font-display leading-none text-text">{{ data.total_periodo }}</p>
+          <p class="mt-1.5 text-caption text-text-muted">no período</p>
         </div>
       </div>
 
       <!-- Detalhe do período -->
       <div class="mt-3 grid grid-cols-3 gap-3">
-        <div class="rounded-lg border border-border bg-surface p-3 text-center">
-          <p class="tabular text-h3 font-semibold text-success">{{ data.concluidos }}</p>
-          <p class="text-caption text-text-muted">concluídos</p>
+        <div class="rounded-xl border border-border bg-surface p-4 text-center shadow-card">
+          <p class="tabular text-h1 font-display text-success">{{ data.concluidos }}</p>
+          <p class="mt-1 text-caption text-text-muted">concluídos</p>
         </div>
-        <div class="rounded-lg border border-border bg-surface p-3 text-center">
-          <p class="tabular text-h3 font-semibold text-warning">{{ data.no_show }}</p>
-          <p class="text-caption text-text-muted">faltas</p>
+        <div class="rounded-xl border border-border bg-surface p-4 text-center shadow-card">
+          <p class="tabular text-h1 font-display text-warning">{{ data.no_show }}</p>
+          <p class="mt-1 text-caption text-text-muted">faltas</p>
         </div>
-        <div class="rounded-lg border border-border bg-surface p-3 text-center">
-          <p class="tabular text-h3 font-semibold text-text-muted">{{ data.cancelados }}</p>
-          <p class="text-caption text-text-muted">cancelados</p>
+        <div class="rounded-xl border border-border bg-surface p-4 text-center shadow-card">
+          <p class="tabular text-h1 font-display text-text-muted">{{ data.cancelados }}</p>
+          <p class="mt-1 text-caption text-text-muted">cancelados</p>
         </div>
       </div>
 
       <!-- Serviços mais agendados -->
-      <section class="mt-5 rounded-lg border border-border bg-surface p-5">
-        <h2 class="mb-3 text-h3 font-display text-text">Serviços mais agendados</h2>
+      <section class="mt-5 rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-6">
+        <h2 class="mb-4 text-h2 font-display text-text">Serviços mais agendados</h2>
         <EmptyState
           v-if="data.top_servicos.length === 0"
           title="Sem dados ainda"
           description="As métricas aparecem conforme os agendamentos chegam."
         />
-        <ul v-else class="flex flex-col gap-2">
-          <li v-for="s in data.top_servicos" :key="s.nome" class="flex items-center justify-between">
-            <span class="text-body text-text">{{ s.nome }}</span>
+        <ul v-else class="flex flex-col gap-1">
+          <li
+            v-for="(s, i) in data.top_servicos"
+            :key="s.nome"
+            class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-surface-2"
+          >
+            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-caption font-bold text-text">{{ i + 1 }}</span>
+            <span class="flex-1 truncate text-body text-text">{{ s.nome }}</span>
             <span class="tabular text-small font-semibold text-text-muted">{{ s.total }}</span>
           </li>
         </ul>

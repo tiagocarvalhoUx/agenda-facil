@@ -9,6 +9,9 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import PageHeader from '@/components/app/PageHeader.vue'
+import PageFab from '@/components/app/PageFab.vue'
+import { Plus, Pencil, Trash2 } from '@lucide/vue'
 
 const auth = useAuthStore()
 const toast = useToast()
@@ -150,17 +153,17 @@ async function remover(s: Service) {
 </script>
 
 <template>
-  <div class="mx-auto max-w-2xl p-4 sm:p-5">
-    <header class="mb-5 flex items-center justify-between">
-      <div>
-        <p class="eyebrow">Serviços</p>
-        <h1 class="text-h1 font-display text-text">Serviços</h1>
-      </div>
-      <BaseButton @click="novo">Novo serviço</BaseButton>
-    </header>
+  <div class="mx-auto max-w-4xl p-4 sm:p-5">
+    <PageHeader eyebrow="Catálogo" title="Serviços">
+      <template #actions>
+        <BaseButton class="hidden lg:inline-flex" @click="novo">
+          <Plus class="h-5 w-5" :stroke-width="2.25" /> Novo serviço
+        </BaseButton>
+      </template>
+    </PageHeader>
 
-    <div v-if="loading" class="flex flex-col gap-2">
-      <BaseSkeleton v-for="n in 3" :key="n" height="64px" />
+    <div v-if="loading" class="grid gap-3 sm:grid-cols-2">
+      <BaseSkeleton v-for="n in 4" :key="n" height="92px" rounded="xl" />
     </div>
 
     <EmptyState
@@ -172,35 +175,48 @@ async function remover(s: Service) {
       @cta="novo"
     />
 
-    <ul v-else class="flex flex-col gap-2">
+    <ul v-else class="stagger grid gap-3 sm:grid-cols-2">
       <li
         v-for="s in list"
         :key="s.id"
-        class="flex items-center justify-between gap-3 rounded-md border border-border bg-surface p-4"
+        class="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 shadow-card transition-colors"
+        :class="s.ativo ? '' : 'opacity-60'"
       >
-        <div>
-          <p class="text-body font-semibold text-text">
-            {{ s.nome }}
-            <span v-if="s.categoria" class="ml-1 rounded-pill bg-surface-2 px-2 py-0.5 text-caption text-text-muted">{{ s.categoria }}</span>
-          </p>
-          <p class="tabular text-small text-text-muted">
-            {{ formatDuracao(s.duracao_min) }}<span v-if="s.buffer_min"> +{{ s.buffer_min }}min</span> · {{ formatPreco(s.preco) }}
-            <span v-if="s.exige_deposito"> · depósito {{ formatPreco(s.deposito_valor) }}</span>
-          </p>
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <p class="flex flex-wrap items-center gap-2 text-body font-semibold text-text">
+              <span class="truncate">{{ s.nome }}</span>
+              <span v-if="s.categoria" class="rounded-pill bg-surface-2 px-2 py-0.5 text-caption text-text-muted">{{ s.categoria }}</span>
+            </p>
+            <p class="tabular mt-1 text-small text-text-muted">
+              {{ formatDuracao(s.duracao_min) }}<span v-if="s.buffer_min"> +{{ s.buffer_min }}min</span> · {{ formatPreco(s.preco) }}
+              <span v-if="s.exige_deposito"> · depósito {{ formatPreco(s.deposito_valor) }}</span>
+            </p>
+          </div>
+          <!-- Toggle de status como pílula -->
+          <button
+            class="shrink-0 rounded-pill px-2.5 py-1 text-caption font-medium transition-colors"
+            :class="s.ativo ? 'bg-success/15 text-success' : 'bg-surface-2 text-text-muted'"
+            @click="toggleAtivo(s)"
+          >{{ s.ativo ? 'Ativo' : 'Inativo' }}</button>
         </div>
-        <div class="flex items-center gap-2">
-          <button class="text-small text-text-muted underline" @click="toggleAtivo(s)">
-            {{ s.ativo ? 'Ativo' : 'Inativo' }}
+        <div class="flex items-center gap-2 border-t border-border pt-3">
+          <button class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-small font-medium text-text-muted transition-colors hover:bg-surface-2 hover:text-text" @click="editar(s)">
+            <Pencil class="h-4 w-4" :stroke-width="2" /> Editar
           </button>
-          <button class="text-small text-accent underline" @click="editar(s)">Editar</button>
-          <button class="text-small text-danger underline" @click="remover(s)">Remover</button>
+          <button class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-small font-medium text-danger transition-colors hover:bg-danger/10" @click="remover(s)">
+            <Trash2 class="h-4 w-4" :stroke-width="2" /> Remover
+          </button>
         </div>
       </li>
     </ul>
 
+    <PageFab label="Novo serviço" @click="novo" />
+
     <Teleport to="body">
-      <div v-if="showForm" class="theme-admin fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/30 sm:items-center" @click.self="showForm = false">
-        <div class="my-4 w-full max-w-sm rounded-t-lg bg-surface p-5 shadow-lg sm:rounded-lg">
+      <div v-if="showForm" class="theme-admin fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/50 backdrop-blur-sm sm:items-center sm:p-4" @click.self="showForm = false">
+        <div class="anim-sheet-up w-full max-w-sm rounded-t-2xl border border-border bg-surface p-5 shadow-pop sm:my-4 sm:rounded-2xl">
+          <div class="mx-auto mb-4 h-1 w-10 rounded-pill bg-border sm:hidden" aria-hidden="true" />
           <h2 class="mb-4 text-h2 font-display text-text">{{ form.id ? 'Editar' : 'Novo' }} serviço</h2>
           <div class="flex flex-col gap-3">
             <BaseInput v-model="form.nome" label="Nome" required />

@@ -254,7 +254,7 @@ async function submitWaitlist() {
         <div class="flex items-center gap-3">
           <button
             v-if="step > 0 && step < 4"
-            class="flex h-touch w-touch items-center justify-center rounded-md text-text-muted hover:bg-surface-2"
+            class="flex h-touch w-touch items-center justify-center rounded-lg text-text-muted hover:bg-surface-2"
             aria-label="Voltar"
             @click="back"
           >‹</button>
@@ -429,7 +429,7 @@ async function submitWaitlist() {
           <!-- Link de auto-gerenciamento (§6.4): remarcar/cancelar sem login -->
           <a
             :href="manageUrl"
-            class="flex min-h-touch w-full items-center justify-center rounded-md border border-border text-small font-medium text-text-muted transition-colors duration-fast hover:border-accent hover:text-text"
+            class="flex min-h-touch w-full items-center justify-center rounded-lg border border-border text-small font-medium text-text-muted transition-colors duration-fast hover:border-accent hover:text-text"
           >
             Remarcar ou cancelar
           </a>
