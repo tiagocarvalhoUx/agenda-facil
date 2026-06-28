@@ -6,7 +6,7 @@ import { formatPreco } from '@/lib/format'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import PageHeader from '@/components/app/PageHeader.vue'
-import { CalendarDays, Wallet, UserX, CalendarRange, ArrowUpRight } from '@lucide/vue'
+import { CalendarDays, Wallet, UserX, CalendarRange, CalendarClock, ArrowUpRight } from '@lucide/vue'
 
 // Classe compartilhada dos cards de métrica clicáveis: card premium + afordância
 // de link (eleva no hover, borda destaca, foco visível, mostra a seta ↗).
@@ -46,6 +46,28 @@ async function load() {
   loading.value = false
 }
 onMounted(load)
+
+// "A receber" (pipeline): soma do preço dos agendados/confirmados nos próximos
+// 30 dias. Independe do período do dashboard; usa o preço congelado (fallback
+// para o preço atual). Mesma lógica do Financeiro.
+const aReceber = ref(0)
+async function loadPipeline() {
+  const now = new Date()
+  const end = new Date(now)
+  end.setDate(end.getDate() + 30)
+  const { data: pipe } = await supabase
+    .from('appointments')
+    .select('preco_total, service:services(preco)')
+    .gt('inicio_at', now.toISOString())
+    .lte('inicio_at', end.toISOString())
+    .in('status', ['agendado', 'confirmado'])
+    .is('deleted_at', null)
+  aReceber.value = ((pipe as unknown as { preco_total: number | null; service: { preco: number } | null }[]) ?? []).reduce(
+    (s, r) => s + (r.preco_total ?? r.service?.preco ?? 0),
+    0,
+  )
+}
+onMounted(loadPipeline)
 
 function setDias(n: number) {
   dias.value = n
@@ -121,6 +143,24 @@ function setDias(n: number) {
           <p class="mt-1.5 text-caption text-text-muted">no período</p>
         </RouterLink>
       </div>
+
+      <!-- A receber (pipeline próximos 30 dias) → abre o Financeiro -->
+      <RouterLink
+        :to="{ name: 'financeiro' }"
+        class="group mt-3 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4 shadow-card transition-all duration-base ease-standard hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--accent)_30%,var(--border))] hover:shadow-float focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        aria-label="Abrir financeiro"
+      >
+        <div class="flex items-center gap-3">
+          <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-info/15 text-info">
+            <CalendarClock class="h-5 w-5" :stroke-width="2" />
+          </span>
+          <div>
+            <p class="text-caption text-text-muted">A receber · próximos 30 dias</p>
+            <p class="tabular text-h2 font-display leading-tight text-text">{{ formatPreco(aReceber) }}</p>
+          </div>
+        </div>
+        <ArrowUpRight class="h-5 w-5 shrink-0 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" :stroke-width="2" aria-hidden="true" />
+      </RouterLink>
 
       <!-- Detalhe do período -->
       <div class="mt-3 grid grid-cols-3 gap-3">

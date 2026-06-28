@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
-import { formatPreco } from '@/lib/format'
+import { formatPreco, formatHora } from '@/lib/format'
+import { STATUS } from '@/lib/appointmentStatus'
 import type { AppointmentStatus } from '@/types/database.types'
 import PageHeader from '@/components/app/PageHeader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -14,6 +15,7 @@ import {
   CalendarClock,
   Scissors,
   UserRound,
+  Download,
 } from '@lucide/vue'
 
 // Financeiro (owner). Visão de caixa derivada dos agendamentos: faturamento
@@ -138,20 +140,58 @@ const serieLabel = (k: string) => {
 const semMovimento = computed(
   () => !loading.value && !errored.value && realizado.value === 0 && perdas.value === 0 && aReceber.value === 0,
 )
+
+// ---- Exportar CSV do período (compatível com Excel/Sheets pt-BR) ----
+// Separador ';' e decimal com vírgula; BOM UTF-8 preserva acentos.
+function exportarCsv() {
+  const dataBR = (iso: string) =>
+    new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo' }).format(new Date(iso))
+  const head = ['Data', 'Hora', 'Serviço', 'Profissional', 'Status', 'Valor (R$)']
+  const linhas = [...rows.value]
+    .sort((a, b) => a.inicio_at.localeCompare(b.inicio_at))
+    .map((r) => [
+      dataBR(r.inicio_at),
+      formatHora(r.inicio_at),
+      r.service?.nome ?? '—',
+      r.professional?.nome ?? '—',
+      STATUS[r.status].label,
+      preco(r).toFixed(2).replace('.', ','),
+    ])
+  const esc = (c: string | number) => `"${String(c).replace(/"/g, '""')}"`
+  const csv = [head, ...linhas].map((cols) => cols.map(esc).join(';')).join('\r\n')
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `financeiro-${dias.value}d-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
   <div class="mx-auto max-w-5xl p-4 sm:p-5">
     <PageHeader eyebrow="Financeiro" title="Financeiro">
       <template #actions>
-        <div class="inline-flex items-center gap-1 rounded-pill border border-border bg-surface/70 p-1 shadow-card backdrop-blur-sm">
+        <div class="flex items-center gap-2">
+          <div class="inline-flex items-center gap-1 rounded-pill border border-border bg-surface/70 p-1 shadow-card backdrop-blur-sm">
+            <button
+              v-for="n in [7, 30, 90]"
+              :key="n"
+              class="h-9 rounded-pill px-3.5 text-small font-semibold transition-colors duration-fast"
+              :class="dias === n ? 'bg-accent text-on-accent shadow-glow' : 'text-text-muted hover:text-text'"
+              @click="setDias(n)"
+            >{{ n }}d</button>
+          </div>
           <button
-            v-for="n in [7, 30, 90]"
-            :key="n"
-            class="h-9 rounded-pill px-3.5 text-small font-semibold transition-colors duration-fast"
-            :class="dias === n ? 'bg-accent text-on-accent shadow-glow' : 'text-text-muted hover:text-text'"
-            @click="setDias(n)"
-          >{{ n }}d</button>
+            class="flex h-11 items-center gap-2 rounded-lg border border-border bg-surface px-3.5 text-small font-semibold text-text shadow-card transition-colors hover:bg-surface-2 disabled:opacity-50"
+            :disabled="loading || rows.length === 0"
+            aria-label="Exportar CSV"
+            @click="exportarCsv"
+          >
+            <Download class="h-4 w-4" :stroke-width="2" />
+            <span class="hidden sm:inline">CSV</span>
+          </button>
         </div>
       </template>
     </PageHeader>
