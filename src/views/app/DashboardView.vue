@@ -6,7 +6,12 @@ import { formatPreco } from '@/lib/format'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import PageHeader from '@/components/app/PageHeader.vue'
-import { CalendarDays, Wallet, UserX, CalendarRange } from '@lucide/vue'
+import { CalendarDays, Wallet, UserX, CalendarRange, ArrowUpRight } from '@lucide/vue'
+
+// Classe compartilhada dos cards de métrica clicáveis: card premium + afordância
+// de link (eleva no hover, borda destaca, foco visível, mostra a seta ↗).
+const metricCard =
+  'group relative block rounded-xl border border-border bg-surface p-5 shadow-card transition-all duration-base ease-standard hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--accent)_30%,var(--border))] hover:shadow-float focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent'
 
 // Dashboard do dono (§6.6): métricas que orientam retenção. Agregação no
 // servidor via RPC SECURITY DEFINER (só owner). Nenhuma é vaidade.
@@ -79,23 +84,26 @@ function setDias(n: number) {
     />
 
     <template v-else-if="data">
-      <!-- Cartões de métrica -->
+      <!-- Cartões de métrica (clicáveis → drill-down na tela relacionada) -->
       <div class="stagger grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div class="rounded-xl border border-border bg-surface p-5 shadow-card">
+        <RouterLink :to="{ name: 'agenda' }" :class="metricCard" aria-label="Ver agenda de hoje">
+          <ArrowUpRight class="absolute right-4 top-4 h-4 w-4 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" :stroke-width="2" aria-hidden="true" />
           <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-soft text-accent ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_30%,transparent)]">
             <CalendarDays class="h-5 w-5" :stroke-width="2" />
           </span>
           <p class="tabular mt-3 text-display-lg font-display leading-none text-text">{{ data.agendamentos_hoje }}</p>
           <p class="mt-1.5 text-caption text-text-muted">agendamentos hoje</p>
-        </div>
-        <div class="rounded-xl border border-border bg-surface p-5 shadow-card">
+        </RouterLink>
+        <RouterLink :to="{ name: 'servicos' }" :class="metricCard" aria-label="Ver serviços e preços">
+          <ArrowUpRight class="absolute right-4 top-4 h-4 w-4 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" :stroke-width="2" aria-hidden="true" />
           <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-success/15 text-success">
             <Wallet class="h-5 w-5" :stroke-width="2" />
           </span>
           <p class="tabular mt-3 text-h1 font-display leading-tight text-text">{{ formatPreco(data.faturamento_estimado) }}</p>
           <p class="mt-1.5 text-caption text-text-muted">faturamento* no período</p>
-        </div>
-        <div class="rounded-xl border border-border bg-surface p-5 shadow-card">
+        </RouterLink>
+        <RouterLink :to="{ name: 'clientes' }" :class="metricCard" aria-label="Ver clientes">
+          <ArrowUpRight class="absolute right-4 top-4 h-4 w-4 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" :stroke-width="2" aria-hidden="true" />
           <span class="flex h-9 w-9 items-center justify-center rounded-lg" :class="data.taxa_no_show > 0.15 ? 'bg-warning/15 text-warning' : 'bg-surface-2 text-text-muted'">
             <UserX class="h-5 w-5" :stroke-width="2" />
           </span>
@@ -103,14 +111,15 @@ function setDias(n: number) {
             {{ (data.taxa_no_show * 100).toFixed(0) }}%
           </p>
           <p class="mt-1.5 text-caption text-text-muted">no-show · {{ data.no_show }} falta(s)</p>
-        </div>
-        <div class="rounded-xl border border-border bg-surface p-5 shadow-card">
+        </RouterLink>
+        <RouterLink :to="{ name: 'agenda' }" :class="metricCard" aria-label="Ver agenda">
+          <ArrowUpRight class="absolute right-4 top-4 h-4 w-4 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" :stroke-width="2" aria-hidden="true" />
           <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-info/15 text-info">
             <CalendarRange class="h-5 w-5" :stroke-width="2" />
           </span>
           <p class="tabular mt-3 text-display-lg font-display leading-none text-text">{{ data.total_periodo }}</p>
           <p class="mt-1.5 text-caption text-text-muted">no período</p>
-        </div>
+        </RouterLink>
       </div>
 
       <!-- Detalhe do período -->
