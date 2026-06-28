@@ -25,6 +25,7 @@ import {
 interface Row {
   inicio_at: string
   status: AppointmentStatus
+  preco_total: number | null // preço congelado na criação (snapshot)
   service: { nome: string; preco: number } | null
   professional: { nome: string } | null
 }
@@ -35,7 +36,7 @@ const errored = ref(false)
 const rows = ref<Row[]>([]) // período (start..agora)
 const future = ref<Row[]>([]) // pipeline (agora..+30d)
 
-const SELECT = 'inicio_at, status, service:services(nome, preco), professional:professionals(nome)'
+const SELECT = 'inicio_at, status, preco_total, service:services(nome, preco), professional:professionals(nome)'
 
 async function load() {
   loading.value = true
@@ -77,7 +78,8 @@ function setDias(n: number) {
   void load()
 }
 
-const preco = (r: Row) => r.service?.preco ?? 0
+// Preço congelado (snapshot) quando existir; senão, preço atual do serviço.
+const preco = (r: Row) => r.preco_total ?? r.service?.preco ?? 0
 
 // ---- Métricas principais ----
 const concluidos = computed(() => rows.value.filter((r) => r.status === 'concluido'))

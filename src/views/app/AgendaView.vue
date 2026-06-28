@@ -228,6 +228,7 @@ async function criar() {
     fim_at: fim.toISOString(),
     status: 'agendado',
     origem: 'painel',
+    preco_total: svc.preco, // congela o preço no momento da criação
   })
   creating.value = false
   if (error) {

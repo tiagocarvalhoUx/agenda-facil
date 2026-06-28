@@ -125,6 +125,7 @@ export interface Appointment {
   inicio_at: string
   fim_at: string
   status: AppointmentStatus
+  preco_total: number | null
   origem: 'painel' | 'publico'
   observacao: string | null
   manage_token: string
