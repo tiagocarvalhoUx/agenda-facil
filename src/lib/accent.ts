@@ -68,7 +68,11 @@ export function applyAccent(color: string | null | undefined, vertical: Vertical
   root.setProperty('--accent', rgbToHex(base))
   root.setProperty('--accent-hover', rgbToHex(hover))
   // texto/ícone sobre o accent: branco ou escuro conforme a luminosidade
-  root.setProperty('--on-accent', foregroundOn(base))
+  const fg = foregroundOn(base)
+  root.setProperty('--on-accent', fg)
+  // borda sutil só quando o accent é claro (fg escuro) — destaca o contorno do
+  // botão sobre fundos claros; transparente para accents escuros.
+  root.setProperty('--accent-border', fg === INK ? 'rgba(0, 0, 0, 0.16)' : 'transparent')
   // fundo suave: mistura clara da marca (10% sobre branco)
   root.setProperty(
     '--accent-soft',

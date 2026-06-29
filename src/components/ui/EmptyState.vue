@@ -22,7 +22,7 @@ defineEmits<{ cta: [] }>()
     </div>
     <button
       v-if="ctaLabel"
-      class="mt-1 inline-flex min-h-touch items-center rounded-lg bg-accent px-6 py-2.5 text-body font-semibold text-on-accent shadow-glow transition-all duration-fast ease-standard hover:bg-accent-hover active:scale-[0.98]"
+      class="mt-1 inline-flex min-h-touch items-center rounded-lg border border-accent-border bg-accent px-6 py-2.5 text-body font-semibold text-on-accent shadow-glow transition-all duration-fast ease-standard hover:bg-accent-hover active:scale-[0.98]"
       @click="$emit('cta')"
     >
       {{ ctaLabel }}

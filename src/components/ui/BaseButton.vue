@@ -19,7 +19,7 @@ const isDisabled = computed(() => props.disabled || props.loading)
 
 const variants: Record<string, string> = {
   primary:
-    'bg-accent text-on-accent shadow-glow hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 disabled:shadow-none',
+    'border border-accent-border bg-accent text-on-accent shadow-glow hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 disabled:shadow-none',
   secondary:
     'border border-border bg-surface text-text hover:bg-surface-2 active:scale-[0.98] disabled:opacity-50',
   ghost: 'text-text hover:bg-surface-2 active:scale-[0.98] disabled:opacity-50',

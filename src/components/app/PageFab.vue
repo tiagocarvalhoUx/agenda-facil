@@ -9,7 +9,7 @@ defineEmits<{ click: [] }>()
 
 <template>
   <button
-    class="anim-scale-in fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-pill bg-accent text-on-accent shadow-glow transition-transform duration-base ease-standard hover:bg-accent-hover active:scale-95 disabled:opacity-50 lg:hidden"
+    class="anim-scale-in fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-pill border border-accent-border bg-accent text-on-accent shadow-glow transition-transform duration-base ease-standard hover:bg-accent-hover active:scale-95 disabled:opacity-50 lg:hidden"
     :aria-label="label"
     :disabled="disabled"
     @click="$emit('click')"

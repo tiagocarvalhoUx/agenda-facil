@@ -27,6 +27,7 @@ export default {
           soft: 'var(--accent-soft)',
         },
         'on-accent': 'var(--on-accent)',
+        'accent-border': 'var(--accent-border)',
         success: 'var(--success)',
         warning: 'var(--warning)',
         danger: 'var(--danger)',

@@ -35,6 +35,9 @@
   --accent-hover: #0b8783;
   --accent-soft: #e6f5f4;
   --on-accent: #ffffff;
+  /* borda do botão/CTA: visível só quando o accent é claro (injetada por
+     applyAccent); transparente por padrão para não alterar o visual atual. */
+  --accent-border: transparent;
 
   /* Semânticas */
   --success: #1a7f5a;
