@@ -31,7 +31,7 @@ const icons: Record<string, string> = { success: '✓', error: '!', info: 'i' }
       >
         <span
           class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-pill text-small font-semibold"
-          :class="t.kind === 'error' ? 'bg-danger text-on-accent' : t.kind === 'success' ? 'bg-success text-on-accent' : 'bg-info text-on-accent'"
+          :class="t.kind === 'error' ? 'bg-danger text-white' : t.kind === 'success' ? 'bg-success text-white' : 'bg-info text-white'"
           aria-hidden="true"
         >{{ icons[t.kind] }}</span>
         <p class="flex-1 text-small text-text">{{ t.message }}</p>

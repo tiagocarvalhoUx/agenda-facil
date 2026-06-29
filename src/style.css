@@ -73,7 +73,8 @@
   /* destaque suave da marca, translúcido para ler bem sobre escuro */
   --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
   --accent-ghost: color-mix(in srgb, var(--accent) 12%, transparent);
-  --on-accent: #ffffff;
+  /* --on-accent é injetado por applyAccent conforme a luminosidade do accent
+     (branco p/ accent escuro, escuro p/ accent claro). Default no :root. */
 
   /* vidro da chrome (sidebar / headers / bottom bar / drawer) */
   --glass: rgba(13, 18, 32, 0.72);

@@ -33,6 +33,25 @@ function darken(rgb: RGB, factor: number): RGB {
   return { r: rgb.r * factor, g: rgb.g * factor, b: rgb.b * factor }
 }
 
+function channelLum(c: number): number {
+  const s = c / 255
+  return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+}
+
+function luminance({ r, g, b }: RGB): number {
+  return 0.2126 * channelLum(r) + 0.7152 * channelLum(g) + 0.0722 * channelLum(b)
+}
+
+// Cor do texto/ícone sobre o accent: escolhe entre branco e um quase-preto
+// pelo que tiver maior contraste — mantém legibilidade mesmo com accent claro.
+const INK = '#101418'
+function foregroundOn(rgb: RGB): string {
+  const l = luminance(rgb)
+  const contrastWhite = (1.0 + 0.05) / (l + 0.05)
+  const contrastInk = (l + 0.05) / (luminance(hexToRgb(INK)!) + 0.05)
+  return contrastWhite >= contrastInk ? '#ffffff' : INK
+}
+
 export function resolveAccent(color: string | null | undefined, vertical: Vertical): string {
   const base = (color && hexToRgb(color)) || hexToRgb(FALLBACK[vertical ?? 'outro'])!
   return rgbToHex(base)
@@ -48,6 +67,8 @@ export function applyAccent(color: string | null | undefined, vertical: Vertical
   const root = document.documentElement.style
   root.setProperty('--accent', rgbToHex(base))
   root.setProperty('--accent-hover', rgbToHex(hover))
+  // texto/ícone sobre o accent: branco ou escuro conforme a luminosidade
+  root.setProperty('--on-accent', foregroundOn(base))
   // fundo suave: mistura clara da marca (10% sobre branco)
   root.setProperty(
     '--accent-soft',

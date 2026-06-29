@@ -194,7 +194,7 @@ async function copiarLink() {
 
       <!-- Passo 3 — Pronto -->
       <section v-else class="flex flex-col items-center gap-5 pt-6 text-center">
-        <div class="flex h-16 w-16 items-center justify-center rounded-pill bg-success text-2xl text-on-accent" aria-hidden="true">✓</div>
+        <div class="flex h-16 w-16 items-center justify-center rounded-pill bg-success text-2xl text-white" aria-hidden="true">✓</div>
         <div>
           <h2 class="text-h1 font-display text-text">Tudo pronto!</h2>
           <p class="mt-1 text-body text-text-muted">Compartilhe seu link e comece a receber agendamentos.</p>

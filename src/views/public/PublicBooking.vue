@@ -399,7 +399,7 @@ async function submitWaitlist() {
 
         <!-- PASSO 4 — Confirmação -->
         <section v-else class="flex flex-col items-center gap-5 pt-6 text-center">
-          <div class="flex h-16 w-16 items-center justify-center rounded-pill bg-success text-2xl text-on-accent" aria-hidden="true">✓</div>
+          <div class="flex h-16 w-16 items-center justify-center rounded-pill bg-success text-2xl text-white" aria-hidden="true">✓</div>
           <div>
             <h2 class="text-h1 font-display text-text">Agendamento confirmado!</h2>
             <p class="mt-1 text-body text-text-muted">Você receberá um lembrete antes.</p>
