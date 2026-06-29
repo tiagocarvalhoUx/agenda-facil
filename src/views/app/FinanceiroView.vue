@@ -61,7 +61,11 @@ async function load() {
   futureEnd.setDate(futureEnd.getDate() + 30)
 
   const [periodo, anterior, pipeline] = await Promise.all([
-    supabase.from('appointments').select(SELECT).gte('inicio_at', start.toISOString()).lte('inicio_at', now.toISOString()).is('deleted_at', null),
+    // Sem teto em "agora": um agendamento concluído é faturamento realizado
+    // mesmo que o horário seja hoje mais tarde (ou futuro, em testes). Os
+    // agendado/confirmado futuros entram aqui, mas não somam em nenhuma métrica
+    // (só 'concluido' vira realizado e 'no_show'/'cancelado' viram perdas).
+    supabase.from('appointments').select(SELECT).gte('inicio_at', start.toISOString()).is('deleted_at', null),
     supabase.from('appointments').select(SELECT).gte('inicio_at', prevStart.toISOString()).lt('inicio_at', start.toISOString()).is('deleted_at', null),
     supabase.from('appointments').select(SELECT).gt('inicio_at', now.toISOString()).lte('inicio_at', futureEnd.toISOString()).in('status', ['agendado', 'confirmado']).is('deleted_at', null),
   ])
