@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
-import { applyAccent, accentPassesAA } from '@/lib/accent'
+import { applyAccent } from '@/lib/accent'
 import BookingStepper from '@/components/public/BookingStepper.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
@@ -22,7 +22,6 @@ const saving = ref(false)
 
 // passo 1 — marca
 const marca = reactive({ nome: auth.tenant?.nome ?? '', accent_color: auth.tenant?.accent_color ?? '#0E9F9A' })
-const contrasteOk = computed(() => accentPassesAA(marca.accent_color))
 
 // passo 2 — serviço
 const servico = reactive({ nome: '', duracao_min: '45', preco: '0' })
@@ -151,9 +150,6 @@ async function copiarLink() {
           <div class="flex items-center gap-3">
             <input v-model="marca.accent_color" type="color" class="h-10 w-14 cursor-pointer rounded-lg border border-border" aria-label="Selecionar cor" />
             <span class="tabular text-small text-text-muted">{{ marca.accent_color.toUpperCase() }}</span>
-            <span class="ml-auto inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-caption" :class="contrasteOk ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'">
-              {{ contrasteOk ? '✓ Contraste AA' : '⚠ Será escurecida' }}
-            </span>
           </div>
         </div>
         <BaseButton :loading="saving" block @click="salvarMarca">Continuar</BaseButton>

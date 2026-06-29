@@ -1,7 +1,7 @@
 // Tema por tenant (ADENDO §13.1 + §18).
 // Injeta UM --accent vindo do registro do tenant, com fallback por vertical.
-// Valida contraste AA (≥ 4.5:1 sobre branco); se falhar, escurece o tom até
-// passar — garantindo legibilidade do texto/CTA sem travar o white-label.
+// White-label livre: a cor escolhida é aplicada exatamente como está, sem
+// escurecimento automático — incluindo tons claros.
 
 type Vertical = 'clinica' | 'salao' | 'outro' | null | undefined
 
@@ -29,36 +29,8 @@ function rgbToHex({ r, g, b }: RGB): string {
   return `#${h(r)}${h(g)}${h(b)}`
 }
 
-function channelLum(c: number): number {
-  const s = c / 255
-  return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
-}
-
-function luminance({ r, g, b }: RGB): number {
-  return 0.2126 * channelLum(r) + 0.7152 * channelLum(g) + 0.0722 * channelLum(b)
-}
-
-// Razão de contraste vs branco (#fff).
-function contrastOnWhite(rgb: RGB): number {
-  const l = luminance(rgb)
-  return (1.0 + 0.05) / (l + 0.05)
-}
-
 function darken(rgb: RGB, factor: number): RGB {
   return { r: rgb.r * factor, g: rgb.g * factor, b: rgb.b * factor }
-}
-
-// Retorna um tom do accent que atinge contraste >= 4.5:1 sobre branco.
-function ensureAA(rgb: RGB): RGB {
-  let out = rgb
-  let factor = 0.92
-  let guard = 0
-  while (contrastOnWhite(out) < 4.5 && guard < 20) {
-    out = darken(rgb, factor)
-    factor -= 0.06
-    guard++
-  }
-  return out
 }
 
 export function resolveAccent(color: string | null | undefined, vertical: Vertical): string {
@@ -66,16 +38,15 @@ export function resolveAccent(color: string | null | undefined, vertical: Vertic
   return rgbToHex(base)
 }
 
-// Aplica o accent ao :root. `--accent` mantém a cor da marca para fundos
-// suaves; `--accent` usado em texto/CTA é o tom validado (escurecido se preciso).
+// Aplica o accent ao :root. A cor da marca é usada como está, sem
+// escurecimento — white-label livre, inclusive em tons claros.
 export function applyAccent(color: string | null | undefined, vertical: Vertical): void {
   const baseHex = resolveAccent(color, vertical)
   const base = hexToRgb(baseHex)!
-  const accessible = ensureAA(base)
-  const hover = darken(accessible, 0.88)
+  const hover = darken(base, 0.88)
 
   const root = document.documentElement.style
-  root.setProperty('--accent', rgbToHex(accessible))
+  root.setProperty('--accent', rgbToHex(base))
   root.setProperty('--accent-hover', rgbToHex(hover))
   // fundo suave: mistura clara da marca (10% sobre branco)
   root.setProperty(
@@ -86,10 +57,4 @@ export function applyAccent(color: string | null | undefined, vertical: Vertical
       b: 255 - (255 - base.b) * 0.1,
     }),
   )
-}
-
-// Validação reutilizável na tela de Configurações (avisa o dono ao salvar a cor).
-export function accentPassesAA(color: string): boolean {
-  const rgb = hexToRgb(color)
-  return rgb ? contrastOnWhite(rgb) >= 4.5 : false
 }

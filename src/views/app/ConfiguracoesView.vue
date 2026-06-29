@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { usePushNotifications, pushSupported } from '@/composables/usePushNotifications'
-import { applyAccent, accentPassesAA } from '@/lib/accent'
+import { applyAccent } from '@/lib/accent'
 import { fetchBilling, subscribe, type TenantBilling } from '@/lib/billing'
 import { formatPreco } from '@/lib/format'
 import BaseInput from '@/components/ui/BaseInput.vue'
@@ -27,7 +27,6 @@ const form = reactive({
   cancelamento_ate_horas: '12',
 })
 const saving = ref(false)
-const contrasteOk = ref(true)
 
 onMounted(() => {
   if (auth.tenant) {
@@ -44,11 +43,10 @@ onMounted(() => {
   }
 })
 
-// preview ao vivo + checa contraste
+// preview ao vivo
 watch(
   () => form.accent_color,
   (c) => {
-    contrasteOk.value = accentPassesAA(c)
     if (/^#[0-9a-f]{6}$/i.test(c)) applyAccent(c, auth.tenant?.vertical)
   },
 )
@@ -173,13 +171,7 @@ async function salvar() {
             <div class="flex items-center gap-3">
               <input v-model="form.accent_color" type="color" class="h-10 w-14 cursor-pointer rounded-lg border border-border" aria-label="Selecionar cor" />
               <span class="tabular text-small text-text-muted">{{ form.accent_color.toUpperCase() }}</span>
-              <span class="ml-auto inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-caption" :class="contrasteOk ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'">
-                {{ contrasteOk ? '✓ Contraste AA' : '⚠ Será escurecida' }}
-              </span>
             </div>
-            <p v-if="!contrasteOk" class="text-small text-text-muted">
-              Essa cor não atinge contraste AA sobre branco — usaremos um tom mais escuro no texto e botões para manter a legibilidade.
-            </p>
           </div>
 
           <BaseButton :loading="saving" @click="salvar">Salvar</BaseButton>
