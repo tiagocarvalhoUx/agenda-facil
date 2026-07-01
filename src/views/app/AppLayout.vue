@@ -68,7 +68,7 @@ const allItems: NavItem[] = [
   { name: 'dashboard', label: 'Dashboard', short: 'Painel', icon: LayoutDashboard, ownerOnly: true },
   { name: 'financeiro', label: 'Financeiro', short: 'Financeiro', icon: Wallet, ownerOnly: true },
   { name: 'clientes', label: 'Clientes', short: 'Clientes', icon: Users },
-  { name: 'lembretes', label: 'Lembretes', short: 'Lembretes', icon: MessageSquare, ownerOnly: true },
+  { name: 'lembretes', label: 'Lembretes de WhatsApp', short: 'Lembretes', icon: MessageSquare, ownerOnly: true },
   { name: 'bloqueios', label: 'Bloqueios', short: 'Folgas', icon: Palmtree },
   { name: 'servicos', label: 'Serviços', short: 'Serviços', icon: Scissors, ownerOnly: true },
   { name: 'profissionais', label: 'Profissionais', short: 'Equipe', icon: UserCog, ownerOnly: true },
