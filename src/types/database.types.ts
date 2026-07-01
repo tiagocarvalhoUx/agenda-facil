@@ -11,6 +11,7 @@ export type AppointmentStatus =
 
 export type MembershipRole = 'owner' | 'staff'
 export type ReminderChannel = 'email' | 'whatsapp' | 'sms'
+export type ReminderStatus = 'pendente' | 'enviado' | 'falhou' | 'cancelado'
 export type DepositoStatus = 'nao_exigido' | 'pendente' | 'pago' | 'estornado'
 
 // Política de agendamento por tenant (booking_policy jsonb).
