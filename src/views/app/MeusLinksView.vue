@@ -194,18 +194,20 @@ async function onBannerChange(e: Event, l: BioLink) {
 }
 
 // ---------- Salvar ----------
-async function salvar() {
+// Persiste a página. Retorna true em sucesso. NÃO emite toast de sucesso —
+// quem chama decide a mensagem (Salvar vs. compartilhar).
+async function persist(): Promise<boolean> {
   if (!USERNAME_RE.test(page.username)) {
     toast.error('Escolha um username válido (letras, números, ponto, hífen).')
-    return
+    return false
   }
   if (usernameStatus.value === 'taken') {
     toast.error('Este username já está em uso.')
-    return
+    return false
   }
   if (page.bio.length > BIO_MAX) {
     toast.error(`A bio deve ter até ${BIO_MAX} caracteres.`)
-    return
+    return false
   }
   saving.value = true
   const { error } = await supabase.from('bio_pages').upsert(
@@ -224,23 +226,62 @@ async function salvar() {
   if (error) {
     if (error.code === '23505') toast.error('Este username já está em uso.')
     else toast.error('Não foi possível salvar as alterações.')
-    return
+    return false
   }
   usernameOriginal.value = page.username
   usernameStatus.value = 'idle'
-  toast.success('Alterações salvas.')
+  return true
 }
 
-async function copiarLink() {
+async function salvar() {
+  if (await persist()) toast.success('Alterações salvas.')
+}
+
+// Copia com fallback (execCommand) para navegadores/webviews sem Clipboard API.
+async function copyToClipboard(text: string): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(publicUrl.value)
-    toast.success('Link copiado.')
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
   } catch {
-    toast.error('Não foi possível copiar.')
+    /* cai no fallback */
+  }
+  try {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.style.position = 'fixed'
+    ta.style.opacity = '0'
+    document.body.appendChild(ta)
+    ta.select()
+    const ok = document.execCommand('copy')
+    document.body.removeChild(ta)
+    return ok
+  } catch {
+    return false
   }
 }
-function verPagina() {
-  window.open(publicUrl.value, '_blank', 'noopener')
+
+// Compartilhar SEMPRE garante que a página está salva antes (senão o link
+// abriria "página não encontrada").
+async function copiarLink() {
+  if (!(await persist())) return
+  const ok = await copyToClipboard(publicUrl.value)
+  if (ok) toast.success('Página salva e link copiado!')
+  else toast.info(`Link da sua página: ${publicUrl.value}`)
+}
+
+// Abre a aba de forma síncrona (dentro do gesto do clique) para não ser
+// bloqueada pelo popup blocker; só então salva e navega.
+async function verPagina() {
+  const win = window.open('about:blank', '_blank')
+  const ok = await persist()
+  if (ok && win) {
+    win.location.href = publicUrl.value
+    toast.success('Página salva!')
+  } else if (win) {
+    win.close()
+  }
 }
 
 const bioCount = computed(() => page.bio.length)
