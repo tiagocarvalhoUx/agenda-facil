@@ -12,6 +12,14 @@ const router = createRouter({
       meta: { public: true },
     },
 
+    // ----- Página pública de links (link-in-bio) -----
+    {
+      path: '/bio/:username',
+      name: 'public-bio',
+      component: () => import('@/views/public/PublicBio.vue'),
+      meta: { public: true },
+    },
+
     // ----- Público (cliente final): funil linear sem navegação global -----
     {
       path: '/:slug',
@@ -73,6 +81,12 @@ const router = createRouter({
           path: 'lembretes',
           name: 'lembretes',
           component: () => import('@/views/app/LembretesView.vue'),
+          meta: { ownerOnly: true },
+        },
+        {
+          path: 'meus-links',
+          name: 'meus-links',
+          component: () => import('@/views/app/MeusLinksView.vue'),
           meta: { ownerOnly: true },
         },
         { path: 'bloqueios', name: 'bloqueios', component: () => import('@/views/app/BloqueiosView.vue') },
