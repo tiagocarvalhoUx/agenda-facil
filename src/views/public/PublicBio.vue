@@ -2,8 +2,9 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
-import { themeOf, normalizeLink, type BioPage, type BioLink } from '@/lib/biolinks'
+import { themeOf, normalizeLink, linkIsReady, type BioPage, type BioLink } from '@/lib/biolinks'
 import BioPreview from '@/components/bio/BioPreview.vue'
+import WhatsAppFab from '@/components/public/WhatsAppFab.vue'
 
 // Página pública de link-in-bio (/bio/:username). Dados só via RPC pública
 // get_public_bio — nenhum acesso direto a tabela. SSR-friendly o suficiente
@@ -13,6 +14,11 @@ const page = ref<BioPage | null>(null)
 const loading = ref(true)
 
 const bg = computed(() => (page.value ? themeOf(page.value.theme).page : '#0f1115'))
+
+// Telefone do primeiro link de WhatsApp preenchido → botão flutuante.
+const whatsappPhone = computed(
+  () => page.value?.links.find((l) => l.type === 'whatsapp' && linkIsReady(l))?.phone ?? null,
+)
 
 async function load() {
   loading.value = true
@@ -63,5 +69,7 @@ watch(() => route.params.username, load)
         </a>
       </footer>
     </div>
+
+    <WhatsAppFab v-if="page" :phone="whatsappPhone" :message="`Olá! Vim pela sua página de links.`" />
   </div>
 </template>

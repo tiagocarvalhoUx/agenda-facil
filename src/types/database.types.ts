@@ -32,6 +32,7 @@ export interface Tenant {
   brand_logo_url: string | null
   vertical: 'clinica' | 'salao' | 'outro' | null
   timezone: string
+  whatsapp: string | null
   booking_policy: BookingPolicy
   created_at: string
 }
@@ -164,6 +165,7 @@ export interface PublicEstablishment {
   brand_logo_url: string | null
   vertical: 'clinica' | 'salao' | 'outro' | null
   timezone: string
+  whatsapp: string | null
   booking_policy: {
     antecedencia_min_horas: number
     antecedencia_max_dias: number

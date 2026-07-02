@@ -21,6 +21,7 @@ const form = reactive({
   nome: '',
   accent_color: '#0E9F9A',
   brand_logo_url: '',
+  whatsapp: '',
   auto_confirmar: true,
   antecedencia_min_horas: '1',
   antecedencia_max_dias: '60',
@@ -33,6 +34,7 @@ onMounted(() => {
     form.nome = auth.tenant.nome
     form.accent_color = auth.tenant.accent_color ?? '#0E9F9A'
     form.brand_logo_url = auth.tenant.brand_logo_url ?? ''
+    form.whatsapp = auth.tenant.whatsapp ?? ''
     const p = auth.tenant.booking_policy
     if (p) {
       form.auto_confirmar = p.auto_confirmar ?? true
@@ -131,6 +133,7 @@ async function salvar() {
       nome: form.nome.trim(),
       accent_color: form.accent_color,
       brand_logo_url: form.brand_logo_url.trim() || null,
+      whatsapp: form.whatsapp.trim() || null,
       booking_policy: {
         auto_confirmar: form.auto_confirmar,
         antecedencia_min_horas: Number(form.antecedencia_min_horas) || 0,
@@ -161,6 +164,17 @@ async function salvar() {
         <div class="flex flex-col gap-4">
           <BaseInput v-model="form.nome" label="Nome do estabelecimento" required />
           <BaseInput v-model="form.brand_logo_url" label="URL do logo (opcional)" placeholder="https://..." />
+          <div class="flex flex-col gap-1">
+            <BaseInput
+              v-model="form.whatsapp"
+              label="WhatsApp de contato (opcional)"
+              inputmode="tel"
+              placeholder="Ex.: 11987654321"
+            />
+            <p class="text-caption text-text-muted">
+              Aparece como botão flutuante na sua página pública para o cliente falar com você em 1 toque.
+            </p>
+          </div>
           <div v-if="form.brand_logo_url" class="flex items-center gap-3">
             <img :src="form.brand_logo_url" alt="Pré-visualização do logo" class="h-12 w-12 rounded-lg object-contain bg-surface-2 p-1" />
             <span class="text-small text-text-muted">Pré-visualização</span>

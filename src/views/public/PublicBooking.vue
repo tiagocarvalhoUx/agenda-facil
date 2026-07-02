@@ -18,6 +18,7 @@ import PhoneInput from '@/components/ui/PhoneInput.vue'
 import ConsentCheckbox from '@/components/ui/ConsentCheckbox.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
+import WhatsAppFab from '@/components/public/WhatsAppFab.vue'
 
 // Funil linear (ADENDO §15.1): 1 decisão por tela no mobile, progresso
 // preservado em memória ao voltar. Tempo até o agendamento < 60s.
@@ -439,5 +440,12 @@ async function submitWaitlist() {
         </section>
       </main>
     </template>
+
+    <!-- Botão flutuante de WhatsApp do estabelecimento -->
+    <WhatsAppFab
+      v-if="estab"
+      :phone="estab.whatsapp"
+      :message="`Olá! Vim pela página de agendamento de ${estab.nome} e gostaria de tirar uma dúvida.`"
+    />
   </div>
 </template>
