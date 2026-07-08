@@ -4,6 +4,15 @@ import { useAuthStore } from '@/stores/auth'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    // ----- Landing de aquisição (raiz): explica o produto antes do cadastro.
+    // É o destino dos anúncios; os CTAs mandam para /comecar (signup). -----
+    {
+      path: '/',
+      name: 'landing',
+      component: () => import('@/views/public/LandingView.vue'),
+      meta: { public: true },
+    },
+
     // ----- Auto-gerenciamento por token (sem login) -----
     {
       path: '/b/:token',
@@ -118,7 +127,6 @@ const router = createRouter({
       ],
     },
 
-    { path: '/', redirect: '/login' },
   ],
 })
 
@@ -130,7 +138,7 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: 'login' }
   }
-  if ((to.name === 'login' || to.name === 'comecar') && auth.isAuthenticated) {
+  if (['login', 'comecar', 'landing'].includes(String(to.name)) && auth.isAuthenticated) {
     return { name: 'agenda' }
   }
   if (to.meta.requiresAuth) {
