@@ -122,11 +122,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Auto-criação do estabelecimento (novo cliente). Trial de 7 dias é iniciado
   // pelo trigger no banco. Recarrega o contexto após criar.
-  async function createTenant(nome: string, slug: string, vertical: string) {
+  async function createTenant(nome: string, slug: string, vertical: string, whatsapp: string) {
     const { error } = await supabase.rpc('create_tenant', {
       p_nome: nome,
       p_slug: slug,
       p_vertical: vertical,
+      p_whatsapp: whatsapp,
     })
     if (error) throw error
     await loadContext()

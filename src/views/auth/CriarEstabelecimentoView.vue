@@ -7,6 +7,7 @@ import { mapBookingError } from '@/lib/errors'
 import { trackStartTrial } from '@/lib/metaPixel'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import PhoneInput from '@/components/ui/PhoneInput.vue'
 
 // Self-serve: novo cliente (ex.: login Google) cria o próprio estabelecimento.
 // O trial de 7 dias começa automaticamente (trigger no banco).
@@ -14,9 +15,10 @@ const auth = useAuthStore()
 const router = useRouter()
 const toast = useToast()
 
-const form = reactive({ nome: '', slug: '', vertical: 'salao' })
+const form = reactive({ nome: '', slug: '', vertical: 'salao', whatsapp: '' })
 const saving = ref(false)
 const slugEditado = ref(false)
+const whatsappErro = ref('')
 
 function slugify(s: string): string {
   return s
@@ -46,9 +48,15 @@ async function criar() {
     toast.error('Link inválido. Use letras minúsculas, números e hifens.')
     return
   }
+  // WhatsApp obrigatório: 10 (fixo) ou 11 (celular) dígitos com DDD.
+  whatsappErro.value = ''
+  if (form.whatsapp.length < 10 || form.whatsapp.length > 11) {
+    whatsappErro.value = 'Informe um WhatsApp com DDD (ex.: (11) 99999-9999).'
+    return
+  }
   saving.value = true
   try {
-    await auth.createTenant(form.nome, form.slug, form.vertical)
+    await auth.createTenant(form.nome, form.slug, form.vertical, form.whatsapp)
     trackStartTrial()
     toast.success('Estabelecimento criado! Você tem 7 dias grátis.')
     router.push({ name: 'agenda' })
@@ -86,6 +94,10 @@ async function criar() {
             <option value="clinica">Clínica / Consultório</option>
             <option value="outro">Outro</option>
           </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <PhoneInput v-model="form.whatsapp" label="WhatsApp do responsável" :error="whatsappErro" required />
+          <p class="text-caption text-text-muted">Pra você receber avisos de agendamento e aparecer o botão de contato na sua página.</p>
         </div>
         <BaseButton :loading="saving" block @click="criar">Criar e começar grátis</BaseButton>
       </div>
