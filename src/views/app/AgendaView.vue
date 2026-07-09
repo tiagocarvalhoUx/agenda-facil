@@ -207,6 +207,33 @@ async function setStatus(status: AppointmentStatus) {
   }
 }
 
+// ---- Excluir (soft-delete) ----
+// Marca deleted_at: some da lista e da grade (que filtram deleted_at is null),
+// sem destruir o histórico. Exige confirmação porque é destrutivo.
+const confirmandoExcluir = ref(false)
+const excluindo = ref(false)
+// Reseta o estado de confirmação sempre que o painel abre/fecha ou troca de item.
+watch(selected, () => (confirmandoExcluir.value = false))
+async function excluir() {
+  if (!selected.value) return
+  excluindo.value = true
+  const { error } = await supabase
+    .from('appointments')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', selected.value.id)
+  excluindo.value = false
+  if (error) {
+    console.error('[agenda] falha ao excluir agendamento:', error)
+    toast.error('Não foi possível excluir. Tente novamente.')
+    return
+  }
+  toast.success('Agendamento excluído.')
+  confirmandoExcluir.value = false
+  selected.value = null
+  await load()
+  gridRef.value?.reload()
+}
+
 // ---- Quick-create pelo painel (§8.1) ----
 // Recepcionista cria com cliente na frente. O EXCLUDE do banco é a barreira
 // final contra overbooking; aqui só montamos um insert válido.
@@ -259,11 +286,16 @@ async function criar() {
   const fim = new Date(inicio.getTime() + (svc.duracao_min + (svc.buffer_min ?? 0)) * 60000)
   creating.value = true
   // cliente: reaproveita por telefone no tenant ou cria
-  const { data: existing } = await supabase
+  // Reaproveita por telefone no tenant (inclui soft-deleted — a unique
+  // (tenant_id, telefone) não é parcial). limit(1) evita erro se houver duplicata.
+  const { data: existing, error: le } = await supabase
     .from('customers')
     .select('id')
     .eq('telefone', novo.cliente_telefone)
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle()
+  if (le) console.error('[agenda] falha ao buscar cliente:', le)
   let customerId = (existing as { id: string } | null)?.id
   if (!customerId) {
     const { data: c, error: ce } = await supabase
@@ -273,7 +305,8 @@ async function criar() {
       .single()
     if (ce || !c) {
       creating.value = false
-      toast.error('Não foi possível salvar o cliente.')
+      console.error('[agenda] falha ao salvar cliente:', ce)
+      toast.error(ce ? mensagemErroInsert(ce) : 'Não foi possível salvar o cliente.')
       return
     }
     customerId = (c as { id: string }).id
@@ -291,16 +324,36 @@ async function criar() {
   })
   creating.value = false
   if (error) {
-    // exclusion_violation (overbooking) vem como erro 23P01
-    toast.error(error.message.includes('23P01') || error.message.toLowerCase().includes('exclud')
-      ? 'Esse horário conflita com outro agendamento.'
-      : 'Não foi possível criar o agendamento.')
+    // Log completo para diagnóstico — nunca deixe a falha "sumir" sem rastro.
+    console.error('[agenda] falha ao criar agendamento:', error)
+    toast.error(mensagemErroInsert(error))
     return
   }
   toast.success('Agendamento criado.')
   showCreate.value = false
+  // Pula a agenda para o dia do agendamento criado, garantindo que o usuário
+  // VEJA o que acabou de salvar (evita a ilusão de "não salvou" quando a data
+  // escolhida difere do dia/semana que estava na tela).
+  date.value = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate())
   await load()
   gridRef.value?.reload()
+}
+
+// Traduz erros do Postgres/Supabase em mensagens claras — o usuário (e nós, no
+// console) sempre sabem POR QUE não salvou, em vez de um genérico.
+function mensagemErroInsert(error: { code?: string; message?: string }): string {
+  const code = error.code ?? ''
+  const msg = (error.message ?? '').toLowerCase()
+  if (code === '23P01' || msg.includes('overbook') || msg.includes('exclud'))
+    return 'Esse horário conflita com outro agendamento desse profissional (considerando o intervalo/buffer do serviço). Escolha outro horário.'
+  if (code === '23505' || msg.includes('duplicate'))
+    return 'Já existe um registro com esses dados (telefone do cliente?). Revise e tente de novo.'
+  if (code === '23514' || msg.includes('check constraint') || msg.includes('violates check'))
+    return 'Dados inválidos — verifique o horário (fim depois do início) e o telefone.'
+  if (code === '23503') return 'Serviço ou profissional inválido. Recarregue a página e tente de novo.'
+  if (code === '42501' || msg.includes('row-level security') || msg.includes('permission'))
+    return 'Sem permissão para criar nesse profissional. Selecione a sua própria agenda.'
+  return 'Não foi possível criar o agendamento. Tente novamente — se persistir, me avise.'
 }
 </script>
 
@@ -469,14 +522,32 @@ async function criar() {
             <p class="text-small text-text-muted">{{ svcName(selected) }} · {{ selected.customer?.nome }}</p>
           </div>
           <div class="flex flex-col gap-2">
-            <BaseButton
-              v-for="a in ACTIONS"
-              :key="a.status"
-              :variant="a.status === 'cancelado' ? 'danger' : 'secondary'"
-              block
-              @click="setStatus(a.status)"
-            >{{ a.label }}</BaseButton>
-            <BaseButton variant="ghost" block @click="selected = null">Fechar</BaseButton>
+            <template v-if="!confirmandoExcluir">
+              <BaseButton
+                v-for="a in ACTIONS"
+                :key="a.status"
+                :variant="a.status === 'cancelado' ? 'danger' : 'secondary'"
+                block
+                @click="setStatus(a.status)"
+              >{{ a.label }}</BaseButton>
+
+              <!-- Excluir: tira o agendamento da agenda (soft-delete). Separado
+                   das ações de status por um divisor para não confundir com "Cancelar". -->
+              <div class="my-1 h-px bg-border" aria-hidden="true" />
+              <BaseButton variant="ghost" block class="text-danger" @click="confirmandoExcluir = true">
+                🗑️ Excluir agendamento
+              </BaseButton>
+              <BaseButton variant="ghost" block @click="selected = null">Fechar</BaseButton>
+            </template>
+
+            <!-- Confirmação da exclusão (2 passos, evita clique acidental) -->
+            <template v-else>
+              <p class="mb-1 text-center text-small text-text-muted">
+                Excluir de vez? O agendamento sai da agenda.
+              </p>
+              <BaseButton variant="danger" block :loading="excluindo" @click="excluir">Sim, excluir</BaseButton>
+              <BaseButton variant="ghost" block @click="confirmandoExcluir = false">Voltar</BaseButton>
+            </template>
           </div>
         </div>
       </div>
