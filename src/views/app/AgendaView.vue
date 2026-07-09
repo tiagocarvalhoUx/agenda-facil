@@ -308,7 +308,17 @@ async function criar() {
     .maybeSingle()
   if (le) console.error('[agenda] falha ao buscar cliente:', le)
   let customerId = (existing as { id: string } | null)?.id
-  if (!customerId) {
+  if (customerId) {
+    // Cliente já existe com esse telefone: ATUALIZA o nome para o que foi
+    // digitado agora (antes o nome antigo — ex.: de um cadastro de teste —
+    // permanecia, fazendo parecer que salvava "o nome errado"). Também reativa
+    // se estava soft-deleted. Mesma regra do fluxo público (RPC).
+    const { error: ue } = await supabase
+      .from('customers')
+      .update({ nome: novo.cliente_nome.trim(), deleted_at: null })
+      .eq('id', customerId)
+    if (ue) console.error('[agenda] falha ao atualizar nome do cliente:', ue)
+  } else {
     const { data: c, error: ce } = await supabase
       .from('customers')
       .insert({ tenant_id: auth.tenant!.id, nome: novo.cliente_nome.trim(), telefone: novo.cliente_telefone })
