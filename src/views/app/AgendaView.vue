@@ -7,11 +7,12 @@ import { useNewBookings } from '@/composables/useNewBookings'
 import { formatHora, formatDataLonga, toDateParam } from '@/lib/format'
 import type { AppointmentStatus, Service, Professional } from '@/types/database.types'
 import AppointmentCard from '@/components/agenda/AppointmentCard.vue'
+import AgendaWeekGrid from '@/components/agenda/AgendaWeekGrid.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
-import { Menu, ChevronLeft, ChevronRight, Plus } from '@lucide/vue'
+import { Menu, ChevronLeft, ChevronRight, Plus, List, CalendarRange } from '@lucide/vue'
 
 // Abre o drawer lateral (provido pelo AppLayout) a partir do hambúrguer do hero.
 const openDrawer = inject<() => void>('openDrawer', () => {})
@@ -39,14 +40,54 @@ const loading = ref(true)
 const errored = ref(false)
 const selected = ref<Row | null>(null)
 
+// Modo de exibição: 'lista' (cartões do dia) ou 'grade' (calendário semanal).
+// Persiste a preferência para reabrir a agenda como o usuário deixou.
+type ViewMode = 'lista' | 'grade'
+const viewMode = ref<ViewMode>(
+  (localStorage.getItem('agenda_view') as ViewMode) === 'grade' ? 'grade' : 'lista',
+)
+const gridRef = ref<InstanceType<typeof AgendaWeekGrid> | null>(null)
+function setView(mode: ViewMode) {
+  viewMode.value = mode
+  localStorage.setItem('agenda_view', mode)
+}
+
 const today = new Date()
 today.setHours(0, 0, 0, 0)
+
+// Segunda-feira da semana de uma data (para navegação/label no modo grade).
+function mondayOf(d: Date): Date {
+  const x = new Date(d)
+  x.setHours(0, 0, 0, 0)
+  const dow = x.getDay()
+  x.setDate(x.getDate() + (dow === 0 ? -6 : 1 - dow))
+  return x
+}
+const thisMonday = mondayOf(new Date())
+
 const canGoBack = computed(() => {
+  if (viewMode.value === 'grade') return mondayOf(date.value) > thisMonday
   const d = new Date(date.value)
   d.setHours(0, 0, 0, 0)
   return d > today
 })
-const isToday = computed(() => date.value.toDateString() === new Date().toDateString())
+// "Hoje" ativo: mesmo dia (lista) ou mesma semana (grade).
+const isToday = computed(() =>
+  viewMode.value === 'grade'
+    ? mondayOf(date.value).getTime() === thisMonday.getTime()
+    : date.value.toDateString() === new Date().toDateString(),
+)
+const todayLabel = computed(() => (viewMode.value === 'grade' ? 'Esta semana' : 'Hoje'))
+
+// Rótulo do período no hero: dia por extenso (lista) ou intervalo da semana (grade).
+const rangeFmt = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' })
+const periodoLabel = computed(() => {
+  if (viewMode.value === 'lista') return formatDataLonga(date.value)
+  const start = mondayOf(date.value)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 6)
+  return `${rangeFmt.format(start)} – ${rangeFmt.format(end)}`.replace(/\./g, '')
+})
 
 // Saudação por período do dia (apresentação — sem dados novos). Hora no fuso BR.
 const greeting = computed(() => {
@@ -89,9 +130,9 @@ async function load() {
   loading.value = false
 }
 
-function shift(days: number) {
+function shift(steps: number) {
   const next = new Date(date.value)
-  next.setDate(next.getDate() + days)
+  next.setDate(next.getDate() + steps * (viewMode.value === 'grade' ? 7 : 1))
   date.value = next
 }
 
@@ -145,6 +186,7 @@ async function setStatus(status: AppointmentStatus) {
     toast.success('Agendamento atualizado.')
     selected.value = null
     await load()
+    gridRef.value?.reload()
   }
 }
 
@@ -164,7 +206,7 @@ const novo = reactive({
   cliente_telefone: '',
 })
 
-async function abrirCriar() {
+async function abrirCriar(prefill?: { data: string; hora: string }) {
   if (services.value.length === 0 || professionals.value.length === 0) {
     const [{ data: svc }, { data: pr }] = await Promise.all([
       supabase.from('services').select('*').eq('ativo', true).is('deleted_at', null).order('nome'),
@@ -175,8 +217,8 @@ async function abrirCriar() {
   }
   novo.service_id = services.value[0]?.id ?? ''
   novo.professional_id = professionals.value[0]?.id ?? ''
-  novo.data = toDateParam(date.value)
-  novo.hora = '09:00'
+  novo.data = prefill?.data ?? toDateParam(date.value)
+  novo.hora = prefill?.hora ?? '09:00'
   novo.cliente_nome = ''
   novo.cliente_telefone = ''
   showCreate.value = true
@@ -241,11 +283,12 @@ async function criar() {
   toast.success('Agendamento criado.')
   showCreate.value = false
   await load()
+  gridRef.value?.reload()
 }
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl p-4 sm:p-5">
+  <div class="mx-auto p-4 sm:p-5" :class="viewMode === 'grade' ? 'max-w-6xl' : 'max-w-3xl'">
     <!-- Top bar: hambúrguer (mobile) + título + Novo (desktop) -->
     <div class="mb-4 flex items-center justify-between gap-3">
       <div class="flex items-center gap-2">
@@ -258,7 +301,7 @@ async function criar() {
         </button>
         <h1 class="text-h2 font-display text-text">Agenda</h1>
       </div>
-      <BaseButton class="hidden lg:inline-flex" @click="abrirCriar">
+      <BaseButton class="hidden lg:inline-flex" @click="abrirCriar()">
         <Plus class="h-5 w-5" :stroke-width="2.25" /> Novo
       </BaseButton>
     </div>
@@ -266,37 +309,60 @@ async function criar() {
     <!-- Hero: saudação + data + resumo do dia (anim de entrada) -->
     <header class="anim-fade-up mb-5">
       <p class="text-small text-text-muted">{{ greeting }} 👋</p>
-      <h2 class="mt-0.5 text-display-lg font-display text-text first-letter:uppercase">{{ formatDataLonga(date) }}</h2>
-      <p class="mt-1 text-small text-text-muted">{{ resumo }}</p>
+      <h2 class="mt-0.5 text-display-lg font-display text-text first-letter:uppercase">{{ periodoLabel }}</h2>
+      <p v-if="viewMode === 'lista'" class="mt-1 text-small text-text-muted">{{ resumo }}</p>
 
-      <!-- Navegação de data: controle segmentado (‹ Hoje ›). O "Hoje" fica
-           sempre visível: vira estado ATIVO (accent) quando já é hoje. -->
-      <div class="mt-4 inline-flex items-center gap-1 rounded-pill border border-border bg-surface/70 p-1 shadow-card backdrop-blur-sm">
-        <button
-          class="flex h-10 w-10 items-center justify-center rounded-pill text-text-muted transition-colors duration-fast hover:bg-surface-2 hover:text-text focus-visible:outline-none disabled:pointer-events-none disabled:opacity-30"
-          :disabled="!canGoBack"
-          aria-label="Dia anterior"
-          @click="shift(-1)"
-        >
-          <ChevronLeft class="h-5 w-5" :stroke-width="2.25" />
-        </button>
-        <button
-          class="h-10 rounded-pill px-5 text-small font-semibold transition-colors duration-fast focus-visible:outline-none"
-          :class="isToday ? 'cursor-default bg-accent text-on-accent shadow-glow' : 'text-text hover:bg-surface-2'"
-          :disabled="isToday"
-          :aria-current="isToday ? 'date' : undefined"
-          @click="date = new Date()"
-        >Hoje</button>
-        <button
-          class="flex h-10 w-10 items-center justify-center rounded-pill text-text-muted transition-colors duration-fast hover:bg-surface-2 hover:text-text focus-visible:outline-none"
-          aria-label="Próximo dia"
-          @click="shift(1)"
-        >
-          <ChevronRight class="h-5 w-5" :stroke-width="2.25" />
-        </button>
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <!-- Navegação (‹ Hoje/Esta semana ›). Passo = 1 dia ou 1 semana. -->
+        <div class="inline-flex items-center gap-1 rounded-pill border border-border bg-surface/70 p-1 shadow-card backdrop-blur-sm">
+          <button
+            class="flex h-10 w-10 items-center justify-center rounded-pill text-text-muted transition-colors duration-fast hover:bg-surface-2 hover:text-text focus-visible:outline-none disabled:pointer-events-none disabled:opacity-30"
+            :disabled="!canGoBack"
+            :aria-label="viewMode === 'grade' ? 'Semana anterior' : 'Dia anterior'"
+            @click="shift(-1)"
+          >
+            <ChevronLeft class="h-5 w-5" :stroke-width="2.25" />
+          </button>
+          <button
+            class="h-10 rounded-pill px-5 text-small font-semibold transition-colors duration-fast focus-visible:outline-none"
+            :class="isToday ? 'cursor-default bg-accent text-on-accent shadow-glow' : 'text-text hover:bg-surface-2'"
+            :disabled="isToday"
+            :aria-current="isToday ? 'date' : undefined"
+            @click="date = new Date()"
+          >{{ todayLabel }}</button>
+          <button
+            class="flex h-10 w-10 items-center justify-center rounded-pill text-text-muted transition-colors duration-fast hover:bg-surface-2 hover:text-text focus-visible:outline-none"
+            :aria-label="viewMode === 'grade' ? 'Próxima semana' : 'Próximo dia'"
+            @click="shift(1)"
+          >
+            <ChevronRight class="h-5 w-5" :stroke-width="2.25" />
+          </button>
+        </div>
+
+        <!-- Alternador de visualização: Lista (cartões) · Grade (semana) -->
+        <div class="inline-flex items-center gap-1 rounded-pill border border-border bg-surface/70 p-1 shadow-card backdrop-blur-sm">
+          <button
+            class="flex h-10 items-center gap-1.5 rounded-pill px-3 text-small font-semibold transition-colors duration-fast focus-visible:outline-none"
+            :class="viewMode === 'lista' ? 'bg-accent text-on-accent shadow-glow' : 'text-text-muted hover:bg-surface-2 hover:text-text'"
+            :aria-pressed="viewMode === 'lista'"
+            @click="setView('lista')"
+          >
+            <List class="h-4 w-4" :stroke-width="2.25" /> Lista
+          </button>
+          <button
+            class="flex h-10 items-center gap-1.5 rounded-pill px-3 text-small font-semibold transition-colors duration-fast focus-visible:outline-none"
+            :class="viewMode === 'grade' ? 'bg-accent text-on-accent shadow-glow' : 'text-text-muted hover:bg-surface-2 hover:text-text'"
+            :aria-pressed="viewMode === 'grade'"
+            @click="setView('grade')"
+          >
+            <CalendarRange class="h-4 w-4" :stroke-width="2.25" /> Grade
+          </button>
+        </div>
       </div>
     </header>
 
+    <!-- ============ MODO LISTA (cartões do dia) ============ -->
+    <template v-if="viewMode === 'lista'">
     <!-- loading -->
     <div v-if="loading" class="flex flex-col gap-2">
       <BaseSkeleton v-for="n in 4" :key="n" height="84px" rounded="md" />
@@ -318,7 +384,7 @@ async function criar() {
       title="Nada na agenda hoje"
       description="Aproveite — ou crie um agendamento."
       cta-label="Novo agendamento"
-      @cta="abrirCriar"
+      @cta="abrirCriar()"
     />
 
     <!-- lista do dia com trilho do agora (inserido na posição cronológica) -->
@@ -354,12 +420,23 @@ async function criar() {
         <span class="h-0.5 flex-1 rounded-pill bg-accent" />
       </div>
     </div>
+    </template>
+
+    <!-- ============ MODO GRADE (calendário semanal) ============ -->
+    <AgendaWeekGrid
+      v-else
+      ref="gridRef"
+      :date="date"
+      :is-owner="auth.isOwner"
+      @select="selected = $event"
+      @create="abrirCriar($event)"
+    />
 
     <!-- FAB flutuante (mobile): cria agendamento. Fica acima da bottom nav. -->
     <button
       class="anim-scale-in fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-pill border border-accent-border bg-accent text-on-accent shadow-glow transition-transform duration-base ease-standard hover:bg-accent-hover active:scale-95 lg:hidden"
       aria-label="Novo agendamento"
-      @click="abrirCriar"
+      @click="abrirCriar()"
     >
       <Plus class="h-6 w-6" :stroke-width="2.5" />
     </button>
