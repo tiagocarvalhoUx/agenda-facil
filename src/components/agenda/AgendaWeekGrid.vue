@@ -21,7 +21,7 @@ export interface Row {
   professional_id: string
   service_id: string
   service: { nome: string } | null
-  customer: { nome: string } | null
+  customer: { nome: string; telefone: string } | null
   professional: { nome: string } | null
 }
 
@@ -88,7 +88,7 @@ async function load() {
   const { data, error } = await supabase
     .from('appointments')
     .select(
-      'id, inicio_at, fim_at, status, professional_id, service_id, service:services(nome), customer:customers(nome), professional:professionals(nome)',
+      'id, inicio_at, fim_at, status, professional_id, service_id, service:services(nome), customer:customers(nome, telefone), professional:professionals(nome)',
     )
     .gte('inicio_at', start.toISOString())
     .lt('inicio_at', end.toISOString())

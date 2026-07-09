@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useNewBookings } from '@/composables/useNewBookings'
 import { formatHora, formatDataLonga, toDateParam } from '@/lib/format'
+import { waLink, temTelefone } from '@/lib/whatsapp'
 import type { AppointmentStatus, Service, Professional } from '@/types/database.types'
 import AppointmentCard from '@/components/agenda/AppointmentCard.vue'
 import AgendaWeekGrid from '@/components/agenda/AgendaWeekGrid.vue'
@@ -31,7 +32,7 @@ interface Row {
   professional_id: string
   service_id: string
   service: { nome: string } | null
-  customer: { nome: string } | null
+  customer: { nome: string; telefone: string } | null
   professional: { nome: string } | null
 }
 
@@ -133,7 +134,7 @@ async function load() {
   // profissional no cliente para staff; o banco já barra o resto.
   const { data, error } = await supabase
     .from('appointments')
-    .select('id, inicio_at, fim_at, status, professional_id, service_id, service:services(nome), customer:customers(nome), professional:professionals(nome)')
+    .select('id, inicio_at, fim_at, status, professional_id, service_id, service:services(nome), customer:customers(nome, telefone), professional:professionals(nome)')
     .gte('inicio_at', start.toISOString())
     .lt('inicio_at', end.toISOString())
     .is('deleted_at', null)
@@ -214,6 +215,16 @@ const confirmandoExcluir = ref(false)
 const excluindo = ref(false)
 // Reseta o estado de confirmação sempre que o painel abre/fecha ou troca de item.
 watch(selected, () => (confirmandoExcluir.value = false))
+
+// ---- Contato do cliente no painel de detalhes ----
+const temTel = computed(() => temTelefone(selected.value?.customer?.telefone))
+// Link de WhatsApp já com uma mensagem pronta sobre o agendamento.
+const waUrl = computed(() => {
+  const s = selected.value
+  if (!s?.customer) return '#'
+  const msg = `Olá ${s.customer.nome}! Sobre seu agendamento de ${svcName(s)} em ${formatDataLonga(s.inicio_at)} às ${formatHora(s.inicio_at)}.`
+  return waLink(s.customer.telefone, msg)
+})
 async function excluir() {
   if (!selected.value) return
   excluindo.value = true
@@ -519,7 +530,25 @@ function mensagemErroInsert(error: { code?: string; message?: string }): string 
           <div class="mx-auto mb-4 h-1 w-10 rounded-pill bg-border sm:hidden" aria-hidden="true" />
           <div class="mb-4">
             <p class="tabular text-h2 font-semibold text-text">{{ formatHora(selected.inicio_at) }}–{{ formatHora(selected.fim_at) }}</p>
-            <p class="text-small text-text-muted">{{ svcName(selected) }} · {{ selected.customer?.nome }}</p>
+            <p class="text-small text-text-muted">{{ svcName(selected) }}<template v-if="auth.isOwner && selected.professional"> · {{ selected.professional.nome }}</template></p>
+
+            <!-- Cliente + telefone (ligar / WhatsApp) -->
+            <div class="mt-3 rounded-xl border border-border bg-surface-2 p-3">
+              <p class="text-h3 font-semibold text-text">{{ selected.customer?.nome ?? '—' }}</p>
+              <template v-if="temTel">
+                <a
+                  :href="`tel:${selected.customer?.telefone}`"
+                  class="tabular mt-1 inline-flex items-center gap-1.5 text-small font-medium text-text"
+                >📞 {{ selected.customer?.telefone }}</a>
+                <a
+                  :href="waUrl"
+                  target="_blank"
+                  rel="noopener"
+                  class="mt-2 flex items-center justify-center gap-2 rounded-pill bg-success px-4 py-2 text-small font-semibold text-white transition-transform duration-fast active:scale-95"
+                >💬 Chamar no WhatsApp</a>
+              </template>
+              <p v-else class="mt-1 text-small text-text-muted">Sem telefone cadastrado.</p>
+            </div>
           </div>
           <div class="flex flex-col gap-2">
             <template v-if="!confirmandoExcluir">
