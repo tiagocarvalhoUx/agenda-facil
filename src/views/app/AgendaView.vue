@@ -29,6 +29,7 @@ interface Row {
   fim_at: string
   status: AppointmentStatus
   professional_id: string
+  service_id: string
   service: { nome: string } | null
   customer: { nome: string } | null
   professional: { nome: string } | null
@@ -39,6 +40,21 @@ const rows = ref<Row[]>([])
 const loading = ref(true)
 const errored = ref(false)
 const selected = ref<Row | null>(null)
+
+// Nomes dos serviços resolvidos por id (tabela pequena, uma leitura). Serve de
+// fallback caso o embed `service:services(nome)` volte vazio no PostgREST.
+const serviceNames = ref<Record<string, string>>({})
+async function loadServiceNames() {
+  const { data } = await supabase.from('services').select('id, nome')
+  const map: Record<string, string> = {}
+  for (const s of (data as { id: string; nome: string }[] | null) ?? []) map[s.id] = s.nome
+  serviceNames.value = map
+}
+// Nome do serviço de uma linha: usa o embed se veio, senão o mapa por id.
+function svcName(r: Pick<Row, 'service' | 'service_id'> | null): string {
+  if (!r) return '—'
+  return r.service?.nome ?? serviceNames.value[r.service_id] ?? '—'
+}
 
 // Modo de exibição: 'lista' (cartões do dia) ou 'grade' (calendário semanal).
 // Persiste a preferência para reabrir a agenda como o usuário deixou.
@@ -117,7 +133,7 @@ async function load() {
   // profissional no cliente para staff; o banco já barra o resto.
   const { data, error } = await supabase
     .from('appointments')
-    .select('id, inicio_at, fim_at, status, professional_id, service:services(nome), customer:customers(nome), professional:professionals(nome)')
+    .select('id, inicio_at, fim_at, status, professional_id, service_id, service:services(nome), customer:customers(nome), professional:professionals(nome)')
     .gte('inicio_at', start.toISOString())
     .lt('inicio_at', end.toISOString())
     .is('deleted_at', null)
@@ -138,6 +154,7 @@ function shift(steps: number) {
 
 watch(date, load)
 onMounted(load)
+onMounted(loadServiceNames)
 
 // Realtime: quando um novo agendamento público chega e é do dia em exibição,
 // recarrega a lista para mostrá-lo sem o dono precisar atualizar a página.
@@ -403,7 +420,7 @@ async function criar() {
           :inicio="r.inicio_at"
           :fim="r.fim_at"
           :status="r.status"
-          :servico="r.service?.nome ?? '—'"
+          :servico="svcName(r)"
           :cliente="r.customer?.nome ?? '—'"
           :profissional="auth.isOwner ? r.professional?.nome : undefined"
           @click="selected = r"
@@ -428,6 +445,7 @@ async function criar() {
       ref="gridRef"
       :date="date"
       :is-owner="auth.isOwner"
+      :service-names="serviceNames"
       @select="selected = $event"
       @create="abrirCriar($event)"
     />
@@ -448,7 +466,7 @@ async function criar() {
           <div class="mx-auto mb-4 h-1 w-10 rounded-pill bg-border sm:hidden" aria-hidden="true" />
           <div class="mb-4">
             <p class="tabular text-h2 font-semibold text-text">{{ formatHora(selected.inicio_at) }}–{{ formatHora(selected.fim_at) }}</p>
-            <p class="text-small text-text-muted">{{ selected.service?.nome }} · {{ selected.customer?.nome }}</p>
+            <p class="text-small text-text-muted">{{ svcName(selected) }} · {{ selected.customer?.nome }}</p>
           </div>
           <div class="flex flex-col gap-2">
             <BaseButton

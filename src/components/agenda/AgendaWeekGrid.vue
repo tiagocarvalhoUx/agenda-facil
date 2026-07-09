@@ -19,6 +19,7 @@ export interface Row {
   fim_at: string
   status: AppointmentStatus
   professional_id: string
+  service_id: string
   service: { nome: string } | null
   customer: { nome: string } | null
   professional: { nome: string } | null
@@ -27,7 +28,15 @@ export interface Row {
 const props = defineProps<{
   date: Date
   isOwner: boolean
+  // Nomes de serviço por id — fallback quando o embed volta vazio (mesma lógica
+  // da lista). Passado pela AgendaView, que já carrega o mapa uma vez.
+  serviceNames?: Record<string, string>
 }>()
+
+// Nome do serviço: embed se veio, senão o mapa por id.
+function svcName(r: Pick<Row, 'service' | 'service_id'>): string {
+  return r.service?.nome ?? props.serviceNames?.[r.service_id] ?? '—'
+}
 
 const emit = defineEmits<{
   select: [row: Row]
@@ -79,7 +88,7 @@ async function load() {
   const { data, error } = await supabase
     .from('appointments')
     .select(
-      'id, inicio_at, fim_at, status, professional_id, service:services(nome), customer:customers(nome), professional:professionals(nome)',
+      'id, inicio_at, fim_at, status, professional_id, service_id, service:services(nome), customer:customers(nome), professional:professionals(nome)',
     )
     .gte('inicio_at', start.toISOString())
     .lt('inicio_at', end.toISOString())
@@ -163,7 +172,7 @@ const columns = computed<Positioned[][]>(() => {
     const startMin = s.getHours() * 60 + s.getMinutes()
     const endMin = Math.max(startMin + 15, e.getHours() * 60 + e.getMinutes())
     const top = ((startMin - startHour * 60) / 60) * HOUR_PX
-    const height = Math.max(((endMin - startMin) / 60) * HOUR_PX, 24)
+    const height = Math.max(((endMin - startMin) / 60) * HOUR_PX, 38)
     buckets[idx].push({ ...r, startMin, endMin, top, height, lane: 0, lanes: 1 })
   }
   // Atribui faixas dentro de cada cluster de eventos que se sobrepõem.
@@ -317,18 +326,21 @@ function onColumnClick(ev: MouseEvent, dayIdx: number) {
                 <button
                   v-for="b in col"
                   :key="b.id"
-                  class="absolute overflow-hidden rounded-md border border-border pl-2 pr-1 py-1 text-left shadow-card transition-transform duration-fast hover:z-10 hover:-translate-y-0.5"
+                  class="absolute flex flex-col overflow-hidden rounded-md border border-border pl-2 pr-1 py-1 text-left leading-tight shadow-card transition-transform duration-fast hover:z-10 hover:-translate-y-0.5"
                   :class="[STATUS[b.status].bg, b.status === 'cancelado' ? 'opacity-60' : '']"
                   :style="blockStyle(b)"
                   @click.stop="emit('select', b)"
                 >
                   <span class="absolute inset-y-1 left-0 w-1 rounded-pill" :class="STATUS[b.status].bar" aria-hidden="true" />
-                  <p class="tabular text-caption font-semibold text-text">{{ formatHora(b.inicio_at) }}</p>
-                  <p class="truncate text-caption font-medium text-text" :class="b.status === 'cancelado' ? 'line-through' : ''">
+                  <!-- Cliente + serviço sempre visíveis (o horário vem da posição/régua) -->
+                  <p class="truncate text-caption font-semibold text-text" :class="b.status === 'cancelado' ? 'line-through' : ''">
                     {{ b.customer?.nome ?? '—' }}
                   </p>
-                  <p v-if="b.height > 46" class="truncate text-caption text-text-muted">
-                    {{ b.service?.nome ?? '—' }}<template v-if="isOwner && b.professional"> · {{ b.professional.nome }}</template>
+                  <p class="truncate text-caption text-text-muted">
+                    {{ svcName(b) }}
+                  </p>
+                  <p v-if="b.height > 64" class="tabular truncate text-caption text-text-muted">
+                    {{ formatHora(b.inicio_at) }}<template v-if="isOwner && b.professional"> · {{ b.professional.nome }}</template>
                   </p>
                 </button>
               </div>
