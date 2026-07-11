@@ -43,7 +43,7 @@ const emit = defineEmits<{
   create: [slot: { data: string; hora: string }]
 }>()
 
-const HOUR_PX = 56 // altura de 1 hora na régua
+const HOUR_PX = 64 // altura de 1 hora na régua
 const rows = ref<Row[]>([])
 const loading = ref(true)
 const errored = ref(false)
@@ -69,8 +69,10 @@ const weekDays = computed(() => {
 })
 
 const wdFmt = new Intl.DateTimeFormat('pt-BR', { weekday: 'short' })
+// "Seg", "Ter"… (capitalizado, sem ponto) — cabeçalho no formato "Seg 2".
 function weekdayLabel(d: Date): string {
-  return wdFmt.format(d).replace('.', '').toUpperCase()
+  const s = wdFmt.format(d).replace('.', '')
+  return s.charAt(0).toUpperCase() + s.slice(1)
 }
 function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
@@ -153,6 +155,15 @@ const bounds = computed(() => {
 const hourLabels = computed(() => {
   const out: number[] = []
   for (let h = bounds.value.startHour; h <= bounds.value.endHour; h++) out.push(h)
+  return out
+})
+// Linhas de meia hora (mais sutis que as de hora cheia) — melhora a leitura de
+// posição/duração sem poluir, como nas agendas de referência.
+const halfHourTops = computed(() => {
+  const out: number[] = []
+  for (let h = bounds.value.startHour; h < bounds.value.endHour; h++) {
+    out.push((h - bounds.value.startHour) * HOUR_PX + HOUR_PX / 2)
+  }
   return out
 })
 const bodyHeight = computed(() => (bounds.value.endHour - bounds.value.startHour) * HOUR_PX)
@@ -260,20 +271,22 @@ function onColumnClick(ev: MouseEvent, dayIdx: number) {
 
     <div v-else class="overflow-x-auto rounded-2xl border border-border bg-surface shadow-card">
       <div class="min-w-[860px]">
-        <!-- Cabeçalho: dias da semana (sticky no topo ao rolar verticalmente) -->
+        <!-- Cabeçalho: "Seg 2 · Ter 3…" (sticky no topo ao rolar verticalmente).
+             O dia de hoje ganha cor de destaque — referência: agendas clínicas. -->
         <div class="sticky top-0 z-20 flex border-b border-border bg-surface/95 backdrop-blur-sm">
           <div class="w-14 shrink-0" aria-hidden="true" />
           <div class="flex flex-1">
             <div
               v-for="(d, i) in weekDays"
               :key="i"
-              class="flex flex-1 flex-col items-center gap-0.5 border-l border-border py-2"
+              class="flex flex-1 items-center justify-center border-l border-border py-3"
+              :class="isSameDay(d, todayRef) ? 'day-head-today' : ''"
             >
-              <span class="text-caption text-text-muted">{{ weekdayLabel(d) }}</span>
               <span
-                class="tabular flex h-8 w-8 items-center justify-center rounded-full text-small font-semibold"
-                :class="isSameDay(d, todayRef) ? 'bg-accent text-on-accent shadow-glow' : 'text-text'"
-              >{{ d.getDate() }}</span>
+                class="text-small font-semibold"
+                :class="isSameDay(d, todayRef) ? 'text-accent' : 'text-text'"
+                :aria-current="isSameDay(d, todayRef) ? 'date' : undefined"
+              >{{ weekdayLabel(d) }} <span class="tabular">{{ d.getDate() }}</span></span>
             </div>
           </div>
         </div>
@@ -289,19 +302,27 @@ function onColumnClick(ev: MouseEvent, dayIdx: number) {
             <div
               v-for="h in hourLabels"
               :key="h"
-              class="absolute right-2 -translate-y-1/2 text-caption tabular text-text-muted"
+              class="absolute right-2 text-caption tabular text-text-muted"
+              :class="h === bounds.startHour ? 'translate-y-1' : '-translate-y-1/2'"
               :style="{ top: `${(h - bounds.startHour) * HOUR_PX}px` }"
             >{{ pad(h) }}:00</div>
           </div>
 
           <!-- Área das colunas -->
           <div class="relative flex-1" :style="{ height: `${bodyHeight}px` }">
-            <!-- Linhas de hora -->
+            <!-- Linhas de hora cheia -->
             <div
               v-for="h in hourLabels"
               :key="`line-${h}`"
               class="pointer-events-none absolute inset-x-0 border-t border-border/70"
               :style="{ top: `${(h - bounds.startHour) * HOUR_PX}px` }"
+            />
+            <!-- Linhas de meia hora (mais sutis) -->
+            <div
+              v-for="t in halfHourTops"
+              :key="`half-${t}`"
+              class="pointer-events-none absolute inset-x-0 border-t border-dashed border-border/40"
+              :style="{ top: `${t}px` }"
             />
 
             <!-- Colunas dos dias -->
@@ -309,41 +330,50 @@ function onColumnClick(ev: MouseEvent, dayIdx: number) {
               <div
                 v-for="(col, i) in columns"
                 :key="i"
-                class="relative border-l border-border"
+                class="relative cursor-pointer border-l border-border"
+                :class="isSameDay(weekDays[i], todayRef) ? 'col-today' : ''"
                 @click="onColumnClick($event, i)"
               >
-                <!-- Linha do agora -->
-                <div
-                  v-if="i === todayIndex && nowTop >= 0 && nowTop <= bodyHeight"
-                  class="pointer-events-none absolute inset-x-0 z-10 flex items-center"
-                  :style="{ top: `${nowTop}px` }"
-                >
-                  <span class="h-2 w-2 -translate-x-1/2 rounded-full bg-accent" />
-                  <span class="h-0.5 flex-1 bg-accent" />
-                </div>
-
-                <!-- Blocos de agendamento -->
+                <!-- Blocos de agendamento: cartões sólidos coloridos por status
+                     (nome + horário), como na referência. O ícone do status
+                     garante que a cor nunca é a única pista (§18). -->
                 <button
                   v-for="b in col"
                   :key="b.id"
-                  class="absolute flex flex-col overflow-hidden rounded-md border border-border pl-2 pr-1 py-1 text-left leading-tight shadow-card transition-transform duration-fast hover:z-10 hover:-translate-y-0.5"
-                  :class="[STATUS[b.status].bg, b.status === 'cancelado' ? 'opacity-60' : '']"
+                  class="evt absolute flex flex-col overflow-hidden rounded-md px-2 py-1.5 text-left leading-tight transition-all duration-fast hover:z-10 hover:shadow-md hover:brightness-105"
+                  :class="[`evt-${b.status}`, b.status === 'cancelado' ? 'opacity-55' : '']"
                   :style="blockStyle(b)"
+                  :title="`${b.customer?.nome ?? '—'} · ${svcName(b)} · ${formatHora(b.inicio_at)}–${formatHora(b.fim_at)} · ${STATUS[b.status].label}`"
+                  :aria-label="`${b.customer?.nome ?? 'Cliente'}, ${svcName(b)}, ${formatHora(b.inicio_at)} até ${formatHora(b.fim_at)}, ${STATUS[b.status].label}`"
                   @click.stop="emit('select', b)"
                 >
-                  <span class="absolute inset-y-1 left-0 w-1 rounded-pill" :class="STATUS[b.status].bar" aria-hidden="true" />
-                  <!-- Cliente + serviço sempre visíveis (o horário vem da posição/régua) -->
-                  <p class="truncate text-caption font-semibold text-text" :class="b.status === 'cancelado' ? 'line-through' : ''">
+                  <span
+                    class="pointer-events-none absolute right-1.5 top-1 text-caption"
+                    :class="STATUS[b.status].text"
+                    aria-hidden="true"
+                  >{{ STATUS[b.status].icon }}</span>
+                  <p class="truncate pr-3 text-caption font-semibold text-text" :class="b.status === 'cancelado' ? 'line-through' : ''">
                     {{ b.customer?.nome ?? '—' }}
                   </p>
-                  <p class="truncate text-caption text-text-muted">
-                    {{ svcName(b) }}
+                  <p v-if="b.height >= 44" class="tabular truncate text-caption text-text-muted">
+                    {{ formatHora(b.inicio_at) }} – {{ formatHora(b.fim_at) }}
                   </p>
-                  <p v-if="b.height > 64" class="tabular truncate text-caption text-text-muted">
-                    {{ formatHora(b.inicio_at) }}<template v-if="isOwner && b.professional"> · {{ b.professional.nome }}</template>
+                  <p v-if="b.height >= 68" class="truncate text-caption text-text-muted">
+                    {{ svcName(b) }}<template v-if="isOwner && b.professional"> · {{ b.professional.nome }}</template>
                   </p>
                 </button>
               </div>
+            </div>
+
+            <!-- Linha do agora: atravessa a grade inteira (vermelha, como na
+                 referência) quando a semana em exibição contém o dia de hoje. -->
+            <div
+              v-if="todayIndex !== -1 && nowTop >= 0 && nowTop <= bodyHeight"
+              class="now-line pointer-events-none absolute inset-x-0 z-10"
+              :style="{ top: `${nowTop}px` }"
+              aria-hidden="true"
+            >
+              <span class="now-dot" />
             </div>
           </div>
         </div>
@@ -351,3 +381,58 @@ function onColumnClick(ev: MouseEvent, dayIdx: number) {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Cartões de agendamento: fundo sólido (mistura do token de status com a
+   superfície — funciona nos temas claro e escuro) + borda na mesma família.
+   Sem hex cru: tudo deriva dos tokens semânticos (ADENDO §13). */
+.evt {
+  background: var(--evt-bg, var(--surface-2));
+  border: 1px solid var(--evt-border, var(--border));
+}
+.evt-agendado {
+  --evt-bg: color-mix(in srgb, var(--info) 22%, var(--surface));
+  --evt-border: color-mix(in srgb, var(--info) 45%, transparent);
+}
+.evt-confirmado {
+  --evt-bg: color-mix(in srgb, var(--success) 22%, var(--surface));
+  --evt-border: color-mix(in srgb, var(--success) 45%, transparent);
+}
+.evt-no_show {
+  --evt-bg: color-mix(in srgb, var(--warning) 22%, var(--surface));
+  --evt-border: color-mix(in srgb, var(--warning) 45%, transparent);
+}
+.evt-concluido {
+  --evt-bg: var(--surface-2);
+  --evt-border: var(--border);
+}
+.evt-cancelado {
+  --evt-bg: color-mix(in srgb, var(--danger) 12%, var(--surface));
+  --evt-border: color-mix(in srgb, var(--danger) 30%, transparent);
+}
+
+/* Hoje: cabeçalho e coluna com um véu sutil do accent, guiando o olho sem
+   competir com os cartões. */
+.day-head-today {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.col-today {
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+
+/* Linha do "agora": vermelha, atravessando todos os dias (referência Codental). */
+.now-line {
+  height: 2px;
+  background: var(--danger);
+}
+.now-dot {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: var(--danger);
+}
+</style>
