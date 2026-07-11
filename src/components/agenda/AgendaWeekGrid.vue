@@ -273,7 +273,7 @@ function onColumnClick(ev: MouseEvent, dayIdx: number) {
       <div class="min-w-[860px]">
         <!-- Cabeçalho: "Seg 2 · Ter 3…" (sticky no topo ao rolar verticalmente).
              O dia de hoje ganha cor de destaque — referência: agendas clínicas. -->
-        <div class="sticky top-0 z-20 flex border-b border-border bg-surface/95 backdrop-blur-sm">
+        <div class="sticky top-0 z-20 flex border-b border-border bg-surface">
           <div class="w-14 shrink-0" aria-hidden="true" />
           <div class="flex flex-1">
             <div
@@ -310,18 +310,21 @@ function onColumnClick(ev: MouseEvent, dayIdx: number) {
 
           <!-- Área das colunas -->
           <div class="relative flex-1" :style="{ height: `${bodyHeight}px` }">
-            <!-- Linhas de hora cheia -->
+            <!-- Linhas de hora cheia. Cores via CSS scoped: o Tailwind 3 NÃO
+                 gera modificador de opacidade (ex.: border-border/70) sobre
+                 tokens var() — a classe some do build e a linha herda o cinza
+                 do preflight, bem mais forte que o desenhado. -->
             <div
               v-for="h in hourLabels"
               :key="`line-${h}`"
-              class="pointer-events-none absolute inset-x-0 border-t border-border/70"
+              class="grid-hour pointer-events-none absolute inset-x-0"
               :style="{ top: `${(h - bounds.startHour) * HOUR_PX}px` }"
             />
             <!-- Linhas de meia hora (mais sutis) -->
             <div
               v-for="t in halfHourTops"
               :key="`half-${t}`"
-              class="pointer-events-none absolute inset-x-0 border-t border-dashed border-border/40"
+              class="grid-half pointer-events-none absolute inset-x-0"
               :style="{ top: `${t}px` }"
             />
 
@@ -355,8 +358,10 @@ function onColumnClick(ev: MouseEvent, dayIdx: number) {
                   <p class="truncate pr-3 text-caption font-semibold text-text" :class="b.status === 'cancelado' ? 'line-through' : ''">
                     {{ b.customer?.nome ?? '—' }}
                   </p>
-                  <p v-if="b.height >= 44" class="tabular truncate text-caption text-text-muted">
-                    {{ formatHora(b.inicio_at) }} – {{ formatHora(b.fim_at) }}
+                  <!-- Sem espaços ao redor do traço + tracking normal: a faixa
+                       "09:00–09:25" cabe inteira na coluna sem truncar. -->
+                  <p v-if="b.height >= 44" class="tabular truncate text-caption tracking-normal text-text-muted">
+                    {{ formatHora(b.inicio_at) }}–{{ formatHora(b.fim_at) }}
                   </p>
                   <p v-if="b.height >= 68" class="truncate text-caption text-text-muted">
                     {{ svcName(b) }}<template v-if="isOwner && b.professional"> · {{ b.professional.nome }}</template>
@@ -391,16 +396,16 @@ function onColumnClick(ev: MouseEvent, dayIdx: number) {
   border: 1px solid var(--evt-border, var(--border));
 }
 .evt-agendado {
-  --evt-bg: color-mix(in srgb, var(--info) 22%, var(--surface));
-  --evt-border: color-mix(in srgb, var(--info) 45%, transparent);
+  --evt-bg: color-mix(in srgb, var(--info) 30%, var(--surface));
+  --evt-border: color-mix(in srgb, var(--info) 55%, transparent);
 }
 .evt-confirmado {
-  --evt-bg: color-mix(in srgb, var(--success) 22%, var(--surface));
-  --evt-border: color-mix(in srgb, var(--success) 45%, transparent);
+  --evt-bg: color-mix(in srgb, var(--success) 30%, var(--surface));
+  --evt-border: color-mix(in srgb, var(--success) 55%, transparent);
 }
 .evt-no_show {
-  --evt-bg: color-mix(in srgb, var(--warning) 22%, var(--surface));
-  --evt-border: color-mix(in srgb, var(--warning) 45%, transparent);
+  --evt-bg: color-mix(in srgb, var(--warning) 30%, var(--surface));
+  --evt-border: color-mix(in srgb, var(--warning) 55%, transparent);
 }
 .evt-concluido {
   --evt-bg: var(--surface-2);
@@ -418,6 +423,16 @@ function onColumnClick(ev: MouseEvent, dayIdx: number) {
 }
 .col-today {
   background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+
+/* Linhas da grade: hora cheia usa o token de borda (sutil, igual às colunas);
+   meia hora é tracejada e ainda mais leve. Nunca via classe utilitária com
+   opacidade (/70) — o Tailwind 3 não a gera para cores em var(). */
+.grid-hour {
+  border-top: 1px solid var(--border);
+}
+.grid-half {
+  border-top: 1px dashed color-mix(in srgb, var(--border) 60%, transparent);
 }
 
 /* Linha do "agora": vermelha, atravessando todos os dias (referência Codental). */
