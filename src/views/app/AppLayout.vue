@@ -3,6 +3,7 @@ import { computed, watch, ref, onUnmounted, provide, type Component } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNewBookings } from '@/composables/useNewBookings'
+import { useTheme } from '@/composables/useTheme'
 import { applyAccent } from '@/lib/accent'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import {
@@ -20,12 +21,17 @@ import {
   Menu,
   X,
   LogOut,
+  Sun,
+  Moon,
 } from '@lucide/vue'
 
 // Navegação role-aware (§12): itens que a role não acessa não aparecem
 // (e a rota é protegida no guard, não só escondida).
 const auth = useAuthStore()
 const router = useRouter()
+
+// Tema do painel (dark padrão / claro) — alternável na sidebar e no drawer.
+const { theme, toggle: toggleTheme } = useTheme()
 
 // Notificações em tempo real (app aberto): liga o canal do tenant e expõe o
 // contador de novos agendamentos para o badge do menu "Agenda".
@@ -134,7 +140,7 @@ function fecharWelcome() {
       <img
         src="/bg-logo.png"
         alt=""
-        class="absolute left-1/2 top-1/2 w-[min(82vw,580px)] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-[0.40] blur-[8px]"
+        class="brand-bg absolute left-1/2 top-1/2 w-[min(82vw,580px)] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-[0.40] blur-[8px]"
       />
       <!-- halo do accent + vinheta que funde no fundo -->
       <div class="absolute -left-32 -top-32 h-80 w-80 rounded-full bg-accent opacity-[0.10] blur-[120px]"></div>
@@ -169,6 +175,15 @@ function fecharWelcome() {
           >{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
         </RouterLink>
       </nav>
+      <button
+        class="mt-1 flex min-h-touch items-center gap-3 rounded-lg px-3 text-body text-text-muted transition-colors duration-fast hover:bg-surface-2 hover:text-text"
+        :aria-pressed="theme === 'light'"
+        @click="toggleTheme"
+      >
+        <Sun v-if="theme === 'dark'" class="h-5 w-5 shrink-0" :stroke-width="2" />
+        <Moon v-else class="h-5 w-5 shrink-0" :stroke-width="2" />
+        {{ theme === 'dark' ? 'Tema claro' : 'Tema escuro' }}
+      </button>
       <button class="mt-1 flex min-h-touch items-center gap-3 rounded-lg px-3 text-body text-text-muted transition-colors duration-fast hover:bg-surface-2 hover:text-text" @click="logout">
         <LogOut class="h-5 w-5 shrink-0" :stroke-width="2" /> Sair
       </button>
@@ -231,6 +246,15 @@ function fecharWelcome() {
               >{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
             </button>
           </nav>
+          <button
+            class="mt-1 flex min-h-touch items-center gap-3 rounded-lg px-3 text-body text-text-muted transition-colors hover:bg-surface-2 hover:text-text"
+            :aria-pressed="theme === 'light'"
+            @click="toggleTheme"
+          >
+            <Sun v-if="theme === 'dark'" class="h-5 w-5 shrink-0" :stroke-width="2" />
+            <Moon v-else class="h-5 w-5 shrink-0" :stroke-width="2" />
+            {{ theme === 'dark' ? 'Tema claro' : 'Tema escuro' }}
+          </button>
           <button class="mt-1 flex min-h-touch items-center gap-3 rounded-lg px-3 text-body text-text-muted transition-colors hover:bg-surface-2 hover:text-text" @click="logout">
             <LogOut class="h-5 w-5 shrink-0" :stroke-width="2" /> Sair
           </button>

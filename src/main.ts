@@ -2,7 +2,11 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
+import { initTheme } from '@/composables/useTheme'
 import './style.css'
+
+// Tema do painel (dark/claro) antes do mount — sem flash do tema errado.
+initTheme()
 
 const app = createApp(App)
 app.use(createPinia())

@@ -70,10 +70,11 @@ export default {
         sm: '0 1px 2px rgba(16, 24, 32, 0.05), 0 1px 3px rgba(16, 24, 32, 0.04)',
         md: '0 4px 12px rgba(16, 24, 32, 0.08)',
         lg: '0 12px 32px rgba(16, 24, 32, 0.14)',
-        // Sombras profundas para o tema dark (cards/chrome/overlays)
-        card: '0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 24px rgba(0,0,0,0.35)',
-        float: '0 12px 40px rgba(0,0,0,0.45)',
-        pop: '0 24px 64px rgba(0,0,0,0.55)',
+        // Sombras por tema — os valores vivem em style.css (:root claro,
+        // .theme-admin dark, html.theme-light .theme-admin claro de novo).
+        card: 'var(--shadow-card)',
+        float: 'var(--shadow-float)',
+        pop: 'var(--shadow-pop)',
         // brilho sutil do accent (FAB / CTA em destaque)
         glow: '0 8px 28px color-mix(in srgb, var(--accent) 45%, transparent)',
       },

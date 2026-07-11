@@ -45,6 +45,12 @@
   --danger: #b42318;
   --info: #1e6fb8;
 
+  /* Sombras por tema (mapeadas em tailwind.config → shadow-card/float/pop).
+     Claras e suaves aqui; o .theme-admin troca por sombras profundas. */
+  --shadow-card: 0 1px 2px rgba(16, 24, 32, 0.05), 0 4px 12px rgba(16, 24, 32, 0.06);
+  --shadow-float: 0 12px 32px rgba(16, 24, 32, 0.14);
+  --shadow-pop: 0 24px 64px rgba(16, 24, 32, 0.22);
+
   /* Motion (ADENDO §13.4) */
   --motion-fast: 120ms;
   --motion-base: 180ms;
@@ -89,7 +95,54 @@
   --danger: #ef4444;
   --info: #60a5fa;
 
+  /* sombras profundas do dark (cards/chrome/overlays) */
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --shadow-pop: 0 24px 64px rgba(0, 0, 0, 0.55);
+
   color-scheme: dark;
+}
+
+/* =========================================================================
+   TEMA CLARO DO PAINEL (opt-in pelo usuário — botão na sidebar)
+   A classe theme-light no <html> re-sobrescreve os tokens do painel para uma
+   paleta clara "clínica" (referência Codental), mantendo o --accent do tenant.
+   Persistida em localStorage (useTheme). Vence o .theme-admin por
+   especificidade, inclusive nos overlays teleportados.
+   ========================================================================= */
+html.theme-light .theme-admin {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface-2: #f1f3f5;
+  --border: #e5e8ec;
+  --text: #1b2430;
+  --text-muted: #5c6570;
+  --ink: #0e3a36;
+
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, #ffffff);
+  --accent-ghost: color-mix(in srgb, var(--accent) 8%, transparent);
+
+  /* vidro claro da chrome (sidebar / drawer / bottom bar) */
+  --glass: rgba(255, 255, 255, 0.78);
+  --glass-strong: rgba(255, 255, 255, 0.92);
+
+  /* semânticas com contraste AA sobre fundo claro (mesmas do :root) */
+  --success: #1a7f5a;
+  --warning: #b45309;
+  --danger: #b42318;
+  --info: #1e6fb8;
+
+  --shadow-card: 0 1px 2px rgba(16, 24, 32, 0.05), 0 4px 12px rgba(16, 24, 32, 0.06);
+  --shadow-float: 0 12px 32px rgba(16, 24, 32, 0.14);
+  --shadow-pop: 0 24px 64px rgba(16, 24, 32, 0.22);
+
+  color-scheme: light;
+}
+
+/* Fundo de marca do painel: no claro, o logo esfumaçado quase some (senão
+   fica "sujo" sobre fundo branco). A vinheta usa var(--bg) e já se adapta. */
+html.theme-light .brand-bg {
+  opacity: 0.08;
 }
 
 @layer base {
