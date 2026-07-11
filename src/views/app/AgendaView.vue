@@ -9,6 +9,7 @@ import { waLink, temTelefone } from '@/lib/whatsapp'
 import type { AppointmentStatus, Service, Professional } from '@/types/database.types'
 import AppointmentCard from '@/components/agenda/AppointmentCard.vue'
 import AgendaWeekGrid from '@/components/agenda/AgendaWeekGrid.vue'
+import MiniCalendar from '@/components/agenda/MiniCalendar.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -514,15 +515,24 @@ function mensagemErroInsert(error: { code?: string; message?: string }): string 
     </template>
 
     <!-- ============ MODO GRADE (calendário semanal) ============ -->
-    <AgendaWeekGrid
-      v-else
-      ref="gridRef"
-      :date="date"
-      :is-owner="auth.isOwner"
-      :service-names="serviceNames"
-      @select="selected = $event"
-      @create="abrirCriar($event)"
-    />
+    <!-- No desktop, o mini calendário fica ao lado (referência: sidebar de
+         agendas clínicas): clicar num dia pula a grade para aquela semana.
+         No mobile ele some — a navegação ‹ Esta semana › do hero basta. -->
+    <div v-else class="flex items-start gap-5">
+      <aside class="hidden w-60 shrink-0 lg:block">
+        <MiniCalendar v-model="date" :min-date="thisMonday" highlight-week />
+      </aside>
+      <div class="min-w-0 flex-1">
+        <AgendaWeekGrid
+          ref="gridRef"
+          :date="date"
+          :is-owner="auth.isOwner"
+          :service-names="serviceNames"
+          @select="selected = $event"
+          @create="abrirCriar($event)"
+        />
+      </div>
+    </div>
 
     <!-- FAB flutuante (mobile): cria agendamento. Fica acima da bottom nav. -->
     <button
