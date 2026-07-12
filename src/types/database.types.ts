@@ -137,6 +137,27 @@ export interface Appointment {
   created_at: string
 }
 
+// Campanha de reativação de clientes (Fase 1 — envio manual via wa.me).
+export interface Campaign {
+  id: string
+  tenant_id: string
+  nome: string
+  objetivo: string
+  mensagem: string
+  dias_inatividade: number
+  created_by: string | null
+  created_at: string
+}
+
+export interface CampaignRecipient {
+  id: string
+  campaign_id: string
+  tenant_id: string
+  customer_id: string
+  enviado_at: string | null
+  created_at: string
+}
+
 // Serviço como exposto na página pública (inclui mapa de profissionais).
 export interface PublicService {
   id: string
@@ -226,6 +247,8 @@ export interface Database {
       working_hours: { Row: WorkingHour; Insert: Partial<WorkingHour>; Update: Partial<WorkingHour> }
       customers: { Row: Customer; Insert: Partial<Customer>; Update: Partial<Customer> }
       appointments: { Row: Appointment; Insert: Partial<Appointment>; Update: Partial<Appointment> }
+      campaigns: { Row: Campaign; Insert: Partial<Campaign>; Update: Partial<Campaign> }
+      campaign_recipients: { Row: CampaignRecipient; Insert: Partial<CampaignRecipient>; Update: Partial<CampaignRecipient> }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

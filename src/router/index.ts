@@ -93,6 +93,12 @@ const router = createRouter({
           meta: { ownerOnly: true },
         },
         {
+          path: 'reativacao',
+          name: 'reativacao',
+          component: () => import('@/views/app/ReativacaoView.vue'),
+          meta: { ownerOnly: true },
+        },
+        {
           path: 'meus-links',
           name: 'meus-links',
           component: () => import('@/views/app/MeusLinksView.vue'),
