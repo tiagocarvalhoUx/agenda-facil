@@ -130,6 +130,9 @@ Deno.serve(async (req) => {
 
     return json({ mensagens })
   } catch (e) {
-    return json({ error: String((e as Error).message ?? e) }, 500)
+    const msg = String((e as Error).message ?? e)
+    // Conta Anthropic sem créditos de API → código próprio para o painel orientar.
+    if (msg.includes('credit balance')) return json({ error: 'sem_creditos' }, 402)
+    return json({ error: msg }, 500)
   }
 })

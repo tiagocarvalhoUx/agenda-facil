@@ -121,8 +121,12 @@ async function gerar() {
       diasInatividade: dias.value,
     })
     if (sugestoes.value[0]) mensagem.value = sugestoes.value[0]
-  } catch {
-    toast.error('A IA não conseguiu gerar a mensagem. Tente novamente.')
+  } catch (e) {
+    toast.error(
+      (e as Error).message === 'sem_creditos'
+        ? 'A conta de IA está sem créditos. Adicione créditos em console.anthropic.com → Plans & Billing.'
+        : 'A IA não conseguiu gerar a mensagem. Tente novamente.',
+    )
   }
   gerando.value = false
 }
