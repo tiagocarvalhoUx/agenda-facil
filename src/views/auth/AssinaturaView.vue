@@ -15,7 +15,7 @@ const auth = useAuthStore()
 const router = useRouter()
 const toast = useToast()
 
-const PLANO_VALOR = 49.9
+const PLANO_VALOR = 79.9
 const billing = ref<TenantBilling | null>(null)
 const loading = ref(true)
 const assinando = ref(false)

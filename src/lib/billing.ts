@@ -41,7 +41,7 @@ export async function subscribe(params: {
     body: JSON.stringify({
       tenant_id: params.tenantId,
       plano: 'Mensal',
-      valor: 49.9,
+      valor: 79.9,
       ciclo: 'MONTHLY',
       billingType: params.billingType,
       cpfCnpj: params.cpfCnpj,

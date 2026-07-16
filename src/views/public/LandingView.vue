@@ -8,9 +8,15 @@ import { trackViewContent, trackLead } from '@/lib/metaPixel'
 // Topo de funil: registra a visita à landing (sinal de alto volume p/ o Meta).
 onMounted(() => trackViewContent())
 
-const PRECO = 'R$ 49,90'
+const PRECO = 'R$ 79,90'
 
-const recursos = [
+const recursos: { emoji: string; titulo: string; texto: string; destaque?: boolean }[] = [
+  {
+    emoji: '✨',
+    titulo: 'Reativação de clientes por IA',
+    texto: 'A IA encontra quem sumiu, escreve a mensagem e você dispara no WhatsApp. Base parada vira agenda cheia.',
+    destaque: true,
+  },
   {
     emoji: '🗓️',
     titulo: 'Agenda online 24h',
@@ -52,6 +58,10 @@ const passos = [
 const verticais = ['Clínicas', 'Salões de beleza', 'Barbearias', 'Estética', 'Consultórios', 'Studios']
 
 const faqs = [
+  {
+    q: 'Como funciona a Reativação de Clientes por IA?',
+    a: 'O sistema encontra clientes que não voltam há 30, 60, 90 ou 180 dias e não têm horário marcado. A IA escreve uma mensagem personalizada para cada um (com nome e a cara do seu negócio), você aprova e dispara pelo seu próprio WhatsApp em um toque. Depois, acompanha quantos voltaram a agendar.',
+  },
   {
     q: 'Preciso instalar alguma coisa?',
     a: 'Não. É tudo online, funciona no celular e no computador. Você e seus clientes só precisam de um navegador.',
@@ -102,6 +112,13 @@ function toggleFaq(i: number) {
       <div class="pointer-events-none absolute left-1/2 top-0 h-96 w-96 -translate-x-1/2 -translate-y-1/3 rounded-full bg-accent opacity-[0.10] blur-[130px]" aria-hidden="true" />
       <div class="anim-fade-up mx-auto grid max-w-6xl items-center gap-6 py-8 lg:grid-cols-2 lg:gap-8 lg:py-16">
         <div class="text-center lg:text-left">
+          <a
+            href="#reativacao-ia"
+            class="mb-4 inline-flex items-center gap-2 rounded-pill border border-accent-border bg-accent-soft px-4 py-1.5 text-caption font-semibold text-accent transition-opacity hover:opacity-80"
+          >
+            <span aria-hidden="true">✨</span> Novo: Reativação de Clientes por IA
+            <span aria-hidden="true">→</span>
+          </a>
           <p class="eyebrow mb-3">Agendamento online</p>
           <h1 class="mb-4 font-display text-display-lg leading-tight text-text sm:text-[2.75rem] sm:leading-[1.1]">
             Sua agenda online, cheia — sem responder WhatsApp o dia todo.
@@ -181,12 +198,108 @@ function toggleFaq(i: number) {
           <h2 class="font-display text-h1 text-text sm:text-[1.75rem]">Uma agenda que trabalha por você</h2>
         </div>
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div v-for="r in recursos" :key="r.titulo" class="rounded-xl border border-border bg-bg p-5">
-            <span class="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-accent-soft text-2xl" aria-hidden="true">
+          <div
+            v-for="r in recursos"
+            :key="r.titulo"
+            class="rounded-xl border p-5"
+            :class="r.destaque
+              ? 'border-accent-border bg-accent-soft sm:col-span-2 lg:col-span-3 sm:flex sm:items-center sm:gap-5'
+              : 'border-border bg-bg'"
+          >
+            <span
+              class="mb-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-2xl sm:mb-0"
+              :class="r.destaque ? 'bg-bg' : 'bg-accent-soft'"
+              aria-hidden="true"
+            >
               {{ r.emoji }}
             </span>
-            <h3 class="mb-1 text-h3 font-semibold text-text">{{ r.titulo }}</h3>
-            <p class="text-small text-text-muted">{{ r.texto }}</p>
+            <div>
+              <h3 class="mb-1 text-h3 font-semibold text-text">
+                {{ r.titulo }}
+                <span v-if="r.destaque" class="ml-1 rounded-pill bg-accent px-2 py-0.5 align-middle text-caption font-semibold text-on-accent">novo</span>
+              </h3>
+              <p class="text-small" :class="r.destaque ? 'text-text' : 'text-text-muted'">{{ r.texto }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Reativação por IA (diferencial) ===== -->
+    <section id="reativacao-ia" class="relative overflow-hidden px-4 py-10 lg:py-16">
+      <div class="pointer-events-none absolute -right-24 top-1/2 h-80 w-80 -translate-y-1/2 rounded-full bg-accent opacity-[0.08] blur-[120px]" aria-hidden="true" />
+      <div class="relative mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-2 lg:gap-12">
+        <!-- Copy -->
+        <div>
+          <p class="eyebrow mb-2">✨ Inteligência Artificial</p>
+          <h2 class="mb-4 font-display text-h1 leading-tight text-text sm:text-[1.75rem]">
+            Reativação de Clientes por IA: transforme sua base parada em agenda cheia
+          </h2>
+          <p class="mb-6 text-body text-text-muted">
+            Todo negócio tem clientes que simplesmente sumiram. O Agenda Fácil encontra quem está
+            parado, a IA escreve a mensagem certa e você dispara pelo WhatsApp em um toque —
+            e ainda mostra quantos voltaram a agendar.
+          </p>
+          <ul class="mb-7 grid gap-3.5">
+            <li class="flex items-start gap-3">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-lg" aria-hidden="true">🔎</span>
+              <div>
+                <p class="text-small font-semibold text-text">Encontra quem sumiu</p>
+                <p class="text-small text-text-muted">Filtre clientes sem visita há 30, 60, 90 ou 180 dias e sem horário marcado.</p>
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-lg" aria-hidden="true">🪄</span>
+              <div>
+                <p class="text-small font-semibold text-text">A IA escreve por você</p>
+                <p class="text-small text-text-muted">Mensagens personalizadas com o nome do cliente e a cara do seu negócio — você só aprova.</p>
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-lg" aria-hidden="true">💬</span>
+              <div>
+                <p class="text-small font-semibold text-text">Dispara no seu WhatsApp</p>
+                <p class="text-small text-text-muted">Cada clique abre a conversa com a mensagem pronta. Sem custo por mensagem, sem bloqueio.</p>
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-lg" aria-hidden="true">📈</span>
+              <div>
+                <p class="text-small font-semibold text-text">Mostra quem voltou</p>
+                <p class="text-small text-text-muted">Acompanhe enviados e reativados de cada campanha e veja o retorno na sua agenda.</p>
+              </div>
+            </li>
+          </ul>
+          <RouterLink
+            :to="{ name: 'comecar' }"
+            class="min-h-touch inline-flex w-full items-center justify-center rounded-pill bg-accent px-7 text-body font-semibold text-on-accent shadow-glow transition-colors hover:bg-accent-hover sm:w-auto"
+            @click="trackLead('reativacao_ia')"
+          >
+            Reativar meus clientes grátis
+          </RouterLink>
+        </div>
+
+        <!-- Mock do produto: campanha + mensagem gerada -->
+        <div class="mx-auto w-full max-w-md" aria-hidden="true">
+          <div class="rounded-2xl border border-border bg-surface p-5 shadow-lg">
+            <div class="mb-4 flex items-center justify-between">
+              <div>
+                <p class="text-caption font-medium text-text-muted">Campanha</p>
+                <p class="text-small font-semibold text-text">Volta de clientes · 90+ dias</p>
+              </div>
+              <span class="rounded-pill bg-accent-soft px-3 py-1 text-caption font-semibold text-accent">✨ escrita por IA</span>
+            </div>
+            <div class="rounded-xl rounded-tl-sm border border-border bg-bg p-4 text-small leading-relaxed text-text shadow-sm">
+              Oi <strong>Ana</strong>! Sentimos sua falta por aqui 💜 Já faz um tempinho desde a sua
+              última visita e seu horário favorito está disponível. Que tal agendar sua volta?
+              É só responder esta mensagem!
+            </div>
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+              <span class="rounded-pill bg-bg px-3 py-1 text-caption font-medium text-text-muted">18 clientes</span>
+              <span class="rounded-pill bg-accent-soft px-3 py-1 text-caption font-medium text-accent">18 enviados</span>
+              <span class="rounded-pill bg-success px-3 py-1 text-caption font-semibold text-white">✓ 7 reativados</span>
+            </div>
+            <p class="mt-3 text-caption text-text-muted">7 clientes que estavam parados voltaram a agendar 🎉</p>
           </div>
         </div>
       </div>
@@ -218,6 +331,10 @@ function toggleFaq(i: number) {
           </p>
           <p class="mt-1 text-small text-text-muted">Todos os recursos incluídos. Sem taxa por agendamento.</p>
           <ul class="mx-auto mt-5 grid max-w-xs gap-2 text-left text-small text-text">
+            <li class="flex items-start gap-2">
+              <span class="text-success" aria-hidden="true">✓</span>
+              <span><strong>Reativação de clientes por IA</strong> <span class="rounded-pill bg-accent-soft px-1.5 py-0.5 text-caption font-semibold text-accent">novo</span></span>
+            </li>
             <li class="flex items-start gap-2"><span class="text-success" aria-hidden="true">✓</span> Agendamentos ilimitados</li>
             <li class="flex items-start gap-2"><span class="text-success" aria-hidden="true">✓</span> Vários profissionais e serviços</li>
             <li class="flex items-start gap-2"><span class="text-success" aria-hidden="true">✓</span> Seu link exclusivo e lembretes</li>

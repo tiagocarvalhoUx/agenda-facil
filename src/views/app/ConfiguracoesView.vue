@@ -81,7 +81,7 @@ async function toggleNotificacoes() {
 }
 
 // ----- Assinatura do SaaS (Asaas) -----
-const PLANO_VALOR = 49.9
+const PLANO_VALOR = 79.9
 const billing = ref<TenantBilling | null>(null)
 const billingLoading = ref(true)
 const assinando = ref(false)

@@ -33,14 +33,14 @@ export const trackViewContent = () =>
 // Clicou num CTA "Começar grátis" na landing (intenção). `origem` identifica
 // qual CTA converteu melhor (hero, preço, rodapé…).
 export const trackLead = (origem: string) =>
-  track('Lead', { content_name: `cta_${origem}`, value: 49.9, currency: 'BRL' })
+  track('Lead', { content_name: `cta_${origem}`, value: 79.9, currency: 'BRL' })
 
 // Estabelecimento criado + trial de 7 dias iniciado.
 export const trackStartTrial = () =>
-  track('StartTrial', { value: 49.9, currency: 'BRL', predicted_ltv: 49.9 * 12 })
+  track('StartTrial', { value: 79.9, currency: 'BRL', predicted_ltv: 79.9 * 12 })
 
 // Clicou em "Assinar" e seguiu para o checkout.
 export const trackInitiateCheckout = (metodo: 'pix' | 'cartao') =>
-  track('InitiateCheckout', { value: 49.9, currency: 'BRL', content_name: `plano_${metodo}` })
+  track('InitiateCheckout', { value: 79.9, currency: 'BRL', content_name: `plano_${metodo}` })
 
 export {}
